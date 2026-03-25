@@ -108,7 +108,7 @@ export const Navbar = () => {
           <div className="flex items-center gap-4">
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-10 w-10 text-secondary-foreground hover:bg-primary/10 hover:text-primary md:hidden">
+                <Button variant="ghost" size="icon" className="h-10 w-10 text-secondary-foreground hover:bg-primary/10 hover:text-primary">
                   <Menu className="w-6 h-6" />
                 </Button>
               </SheetTrigger>
@@ -144,8 +144,25 @@ export const Navbar = () => {
                     </div>
                   </div>
 
+                  {!user && (
+                    <div className="border-t border-primary/10 pt-6">
+                      <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                        <Button variant="outline" className="w-full justify-start gap-2 border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground font-bold">
+                          <UserCircle className="w-4 h-4" /> {t.adminLogin}
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+
                   {user && (
-                    <div className="border-t border-primary/10 pt-6 mt-auto">
+                    <div className="border-t border-primary/10 pt-6">
+                      {isAdmin && (
+                        <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)}>
+                          <Button variant="outline" className="w-full justify-start gap-2 border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground font-bold mb-3">
+                            <LayoutDashboard className="w-4 h-4" /> {t.adminPanel}
+                          </Button>
+                        </Link>
+                      )}
                       <Button
                         variant="ghost"
                         onClick={handleLogout}

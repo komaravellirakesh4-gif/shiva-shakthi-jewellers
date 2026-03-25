@@ -1,0 +1,358 @@
+
+{
+  "entities": {
+    "GoldPrice": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "GoldPrice",
+      "type": "object",
+      "description": "Represents the price information for different items.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the gold price entry."
+        },
+        "adminPrice24k": {
+          "type": "number",
+          "description": "Admin set price for 24K gold per gram."
+        },
+        "adminPriceSilver": {
+          "type": "number",
+          "description": "Admin set price for Silver per gram."
+        },
+        "lastUpdated": {
+          "type": "string",
+          "description": "Timestamp of the last price update.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "adminPrice24k",
+        "adminPriceSilver",
+        "lastUpdated"
+      ]
+    },
+    "Calculation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Calculation",
+      "type": "object",
+      "description": "Represents a single gold calculation performed by a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the calculation."
+        },
+        "goldWeight": {
+          "type": "number",
+          "description": "Weight of gold/silver in grams."
+        },
+        "goldPurity": {
+          "type": "string",
+          "description": "Type of item (24K, Silver)."
+        },
+        "goldRate": {
+          "type": "number",
+          "description": "Rate per gram at the time of calculation."
+        },
+        "makingChargesPerGram": {
+          "type": "number",
+          "description": "Making charges per gram."
+        },
+        "makingChargesFixed": {
+          "type": "number",
+          "description": "Fixed amount making charges."
+        },
+        "wastagePercentage": {
+          "type": "number",
+          "description": "Wastage percentage."
+        },
+        "wastageGrams": {
+          "type": "number",
+          "description": "Wastage in grams."
+        },
+        "taxRate": {
+          "type": "number",
+          "description": "Tax rate applied to the calculation."
+        },
+        "stonePrice": {
+          "type": "number",
+          "description": "Price of stones/diamonds (optional)."
+        },
+        "discount": {
+          "type": "number",
+          "description": "Discount applied to the calculation (optional)."
+        },
+        "netGoldWeight": {
+          "type": "number",
+          "description": "Calculated net weight."
+        },
+        "goldValue": {
+          "type": "number",
+          "description": "Calculated value."
+        },
+        "makingChargesValue": {
+          "type": "number",
+          "description": "Calculated making charges value."
+        },
+        "wastageCost": {
+          "type": "number",
+          "description": "Calculated wastage cost."
+        },
+        "taxAmount": {
+          "type": "number",
+          "description": "Calculated tax amount."
+        },
+        "totalPrice": {
+          "type": "number",
+          "description": "Final calculated total price."
+        },
+        "calculationDate": {
+          "type": "string",
+          "description": "Date and time of the calculation.",
+          "format": "date-time"
+        },
+        "remarks": {
+          "type": "string",
+          "description": "Custom notes or remarks for the calculation."
+        }
+      },
+      "required": [
+        "id",
+        "goldWeight",
+        "goldPurity",
+        "goldRate",
+        "makingChargesPerGram",
+        "makingChargesFixed",
+        "wastagePercentage",
+        "wastageGrams",
+        "taxRate",
+        "netGoldWeight",
+        "goldValue",
+        "makingChargesValue",
+        "wastageCost",
+        "taxAmount",
+        "totalPrice",
+        "calculationDate"
+      ]
+    },
+    "CustomerNote": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CustomerNote",
+      "type": "object",
+      "description": "Represents a pending customer detail or credit entry.",
+      "properties": {
+        "id": { "type": "string" },
+        "customerName": { "type": "string" },
+        "mobileNo": { "type": "string" },
+        "amountDue": { "type": "number" },
+        "itemName": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "customerName", "amountDue", "timestamp"]
+    },
+    "TaxRate": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TaxRate",
+      "type": "object",
+      "description": "Represents the tax configuration, including the GST rate.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the tax rate configuration."
+        },
+        "gstRate": {
+          "type": "number",
+          "description": "Goods and Services Tax (GST) rate.",
+          "format": "number"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "description": "Timestamp of the last tax rate update.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "gstRate",
+        "lastUpdated"
+      ]
+    },
+    "AdminSettings": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AdminSettings",
+      "type": "object",
+      "description": "Represents administrative settings for the Shiva Shakthi Jewellers application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the admin settings."
+        },
+        "shopName": {
+          "type": "string",
+          "description": "Name of the jewelry shop."
+        },
+        "logoUrl": {
+          "type": "string",
+          "description": "URL of the shop's logo.",
+          "format": "uri"
+        },
+        "currency": {
+          "type": "string",
+          "description": "Currency used in the application."
+        },
+        "defaultLanguage": {
+          "type": "string",
+          "description": "Default language for the application."
+        },
+        "enablePrinting": {
+          "type": "boolean",
+          "description": "Flag to enable or disable printing functionality."
+        },
+        "backupSettings": {
+          "type": "boolean",
+          "description": "Flag to enable auto backup"
+        },
+        "adminProfilePicUrl": {
+          "type": "string",
+          "description": "URL of the administrator's profile picture.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "shopName",
+        "logoUrl",
+        "currency",
+        "defaultLanguage",
+        "enablePrinting"
+      ]
+    },
+    "AdminRole": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AdminRole",
+      "type": "object",
+      "description": "Represents a specific administrator role and their personal preferences.",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string" },
+        "profilePicUrl": { "type": "string", "format": "uri" },
+        "initializedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/gold_prices/{goldPriceId}",
+        "definition": {
+          "entityName": "GoldPrice",
+          "schema": {
+            "$ref": "#/backend/entities/GoldPrice"
+          },
+          "description": "Stores pricing information. Allows admin to update prices for 24K and Silver.",
+          "params": [
+            {
+              "name": "goldPriceId",
+              "description": "Unique identifier for the price entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/calculations/{calculationId}",
+        "definition": {
+          "entityName": "Calculation",
+          "schema": {
+            "$ref": "#/backend/entities/Calculation"
+          },
+          "description": "Stores calculation records for each user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user."
+            },
+            {
+              "name": "calculationId",
+              "description": "Unique identifier for the calculation."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/notes/{noteId}",
+        "definition": {
+          "entityName": "CustomerNote",
+          "schema": {
+            "$ref": "#/backend/entities/CustomerNote"
+          },
+          "description": "Stores pending customer details and dues.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user."
+            },
+            {
+              "name": "noteId",
+              "description": "Unique identifier for the note."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/tax_rate/{taxRateId}",
+        "definition": {
+          "entityName": "TaxRate",
+          "schema": {
+            "$ref": "#/backend/entities/TaxRate"
+          },
+          "description": "Stores the tax rate configuration.",
+          "params": [
+            {
+              "name": "taxRateId",
+              "description": "Unique identifier for the tax rate configuration."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/admin_settings/{adminSettingsId}",
+        "definition": {
+          "entityName": "AdminSettings",
+          "schema": {
+            "$ref": "#/backend/entities/AdminSettings"
+          },
+          "description": "Stores the application's administrative settings.",
+          "params": [
+            {
+              "name": "adminSettingsId",
+              "description": "Unique identifier for the admin settings."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "AdminRole",
+          "schema": {
+            "$ref": "#/backend/entities/AdminRole"
+          },
+          "description": "This document's existence grants admin privileges to the associated user ID and stores profile info.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "Updated to include CustomerNote entity for tracking pending payments and dues."
+  }
+}

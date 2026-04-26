@@ -70,9 +70,9 @@ const ReceiptLayout = React.forwardRef<HTMLDivElement, { calculation: Calculatio
                   <img src="/shiva-logo.png" alt="Shiva Shakthi" width={40} height={40} className="mb-0.5" />
                   <p className="text-[16px] font-black text-[#C2410C] tracking-[0.25em] leading-none mb-0.5">K B S</p>
                 </div>
-                <h1 className="text-[30px] font-headline font-black text-[#C2410C] uppercase tracking-tight leading-none mb-0.5">SHIVA SHAKTHI JEWELLERS</h1>
+                <h1 className="text-[30px] font-headline font-black text-[#C2410C] uppercase tracking-tight leading-none mb-0.5">{t.shopName}</h1>
                 <p className="text-[12px] font-black text-slate-800 uppercase tracking-[0.1em] font-sans leading-none mt-2">
-                  OLD BAZAAR, ACHAMPET, DIST: NGKL, TELANGANA 509375
+                  {t.shopAddress}
                 </p>
               </div>
 
@@ -96,7 +96,7 @@ const ReceiptLayout = React.forwardRef<HTMLDivElement, { calculation: Calculatio
               </p>
               <div className="grid grid-cols-[120px_1fr] gap-x-4 gap-y-2">
                 <span className="text-slate-900 font-black uppercase text-[12px]">{t.customerName} :</span>
-                <span className="font-black uppercase text-[18px] leading-none border-b border-slate-200 pb-0.5">{calculation.customerName || "WALK-IN"}</span>
+                <span className="font-black uppercase text-[18px] leading-none border-b border-slate-200 pb-0.5">{calculation.customerName || t.walkIn}</span>
                 <span className="text-slate-900 font-black uppercase text-[12px]">{t.customerAddress} :</span>
                 <span className="font-black uppercase text-[14px] leading-none border-b border-slate-200 pb-0.5">{calculation.customerAddress || "N/A"}</span>
                 <span className="text-slate-900 font-black uppercase text-[12px]">{t.customerPhone} :</span>
@@ -105,7 +105,7 @@ const ReceiptLayout = React.forwardRef<HTMLDivElement, { calculation: Calculatio
             </div>
             <div className="text-right space-y-1.5">
               <p className="font-black text-[14px] leading-none">
-                <span className="text-blue-800 uppercase tracking-wider text-[11px]">BILL NO:</span> {calculation.billNumber}
+                <span className="text-blue-800 uppercase tracking-wider text-[11px]">{t.billNo}:</span> {calculation.billNumber}
               </p>
               <div className="flex flex-col items-end">
                 <p className="font-black text-[14px] leading-none"><span className="text-blue-800 uppercase tracking-wider text-[11px]">{t.date}:</span> {format(new Date(calculation.timestamp), 'dd MMM yyyy')}</p>
@@ -123,7 +123,7 @@ const ReceiptLayout = React.forwardRef<HTMLDivElement, { calculation: Calculatio
                   <th className="border-r-[2px] border-slate-900 p-2 text-left font-black uppercase">{t.prodDesc}</th>
                   <th className="border-r-[2px] border-slate-900 p-2 text-center font-black uppercase w-[10%]">{t.gsWt}</th>
                   <th className="border-r-[2px] border-slate-900 p-2 text-center font-black uppercase w-[22%]">{t.ntWt}</th>
-                  <th className="border-r-[2px] border-slate-900 p-2 text-center font-black uppercase w-[18%]">RATES (10G)</th>
+                  <th className="border-r-[2px] border-slate-900 p-2 text-center font-black uppercase w-[18%]">{t.ratesHeader}</th>
                   <th className="p-2 text-center font-black uppercase w-[18%]">{t.finalAmt}</th>
                 </tr>
               </thead>
@@ -164,16 +164,16 @@ const ReceiptLayout = React.forwardRef<HTMLDivElement, { calculation: Calculatio
                       
                       {calculation.meltingLoss && calculation.meltingLoss > 0 && (
                         <div className="flex flex-col items-center p-1 rounded border border-red-100 w-full mt-1" style={{ backgroundColor: '#fef2f2' }}>
-                          <p className="text-[8px] font-black text-red-600 uppercase mb-0">Loss: {calculation.meltingLoss}%</p>
+                          <p className="text-[8px] font-black text-red-600 uppercase mb-0">{t.lossLabel}: {calculation.meltingLoss}%</p>
                           <p className="text-[10px] font-black text-slate-800">
-                             Net: {(calculation.oldWeight! - (calculation.oldWeight! * calculation.meltingLoss / 100)).toFixed(3)} G
+                             {t.netLabel}: {(calculation.oldWeight! - (calculation.oldWeight! * calculation.meltingLoss / 100)).toFixed(3)} G
                           </p>
                         </div>
                       )}
 
                       {calculation.oldItemValue && calculation.oldItemValue > 0 && (
                         <div className="mt-1 pt-1 border-t border-slate-900 w-full">
-                          <p className="text-[11px] text-red-700 font-black text-center">CR: Rs {Math.round(calculation.oldItemValue).toLocaleString()}</p>
+                          <p className="text-[11px] text-red-700 font-black text-center">{t.creditLabel}: Rs {Math.round(calculation.oldItemValue).toLocaleString()}</p>
                         </div>
                       )}
                     </div>
@@ -181,11 +181,11 @@ const ReceiptLayout = React.forwardRef<HTMLDivElement, { calculation: Calculatio
                   <td className="border-r-[2px] border-slate-900 p-2 text-center font-black text-[14px]">
                     <div className="flex flex-col gap-1.5 py-1">
                       <div className="border-b border-slate-200 pb-1">
-                        <span className="text-[8px] text-blue-800 block uppercase leading-none mb-0.5">Gold (24K)</span>
+                        <span className="text-[8px] text-blue-800 block uppercase leading-none mb-0.5">{t.gold24k}</span>
                         <span className="text-[13px] leading-none">Rs {Math.round((prices['24K']?.adminPrice || 0) * 10).toLocaleString()}</span>
                       </div>
                       <div>
-                        <span className="text-[8px] text-slate-500 block uppercase leading-none mb-0.5">Silver</span>
+                        <span className="text-[8px] text-slate-500 block uppercase leading-none mb-0.5">{t.silver}</span>
                         <span className="text-[13px] leading-none">Rs {Math.round((prices['Silver']?.adminPrice || 0) * 10).toLocaleString()}</span>
                       </div>
                     </div>
@@ -201,13 +201,13 @@ const ReceiptLayout = React.forwardRef<HTMLDivElement, { calculation: Calculatio
             <div className="w-[390px] space-y-1.5 text-[13px] bg-white p-6 border-[2px] border-slate-900 rounded-lg shadow-lg">
               <div className="space-y-1 border-b border-slate-100 pb-2">
                 <div className="flex justify-between items-center text-blue-800 font-black mb-1">
-                  <span className="uppercase text-[11px] tracking-widest">Additions Subtotal (+)</span>
+                  <span className="uppercase text-[11px] tracking-widest">{t.additionsSubtotal}</span>
                   <span className="text-[13px]">Rs {Math.round(ornamentValueBase).toLocaleString()}</span>
                 </div>
                 {hasNewItem && (
                   <>
                     <div className="flex justify-between items-center ml-2">
-                      <span className="font-black text-slate-700 uppercase text-[10px]">Ornament ({calculation.weight} G x {(calculation.rate * 10).toLocaleString()}/10G) :</span>
+                      <span className="font-black text-slate-700 uppercase text-[10px]">{t.ornamentLabel} ({calculation.weight} G x {(calculation.rate * 10).toLocaleString()}/10G) :</span>
                       <span className="font-black text-[11px]">Rs {Math.round(calculation.weight * calculation.rate).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between items-center ml-2">
@@ -240,12 +240,12 @@ const ReceiptLayout = React.forwardRef<HTMLDivElement, { calculation: Calculatio
 
               <div className="space-y-1 border-b border-slate-100 pb-2">
                 <div className="flex justify-between items-center text-secondary font-black mb-1">
-                  <span className="uppercase text-[11px] tracking-widest">Deductions Subtotal (-)</span>
+                  <span className="uppercase text-[11px] tracking-widest">{t.deductionsSubtotal}</span>
                   <span className="text-[13px]">Rs {Math.round(deductionsTotal).toLocaleString()}</span>
                 </div>
                 {hasOldItem && calculation.oldItemValue && calculation.oldItemValue > 0 && (
                   <div className="flex justify-between items-center ml-2 text-red-700 font-black">
-                    <span className="uppercase text-[10px]">Old Item ({calculation.oldWeight} G x {((calculation.oldRate || 0) * 10).toLocaleString()}/10G) (-) :</span>
+                    <span className="uppercase text-[10px]">{t.oldItemLabel} ({calculation.oldWeight} G x {((calculation.oldRate || 0) * 10).toLocaleString()}/10G) (-) :</span>
                     <span className="font-black text-[11px]">Rs {Math.round(calculation.oldItemValue).toLocaleString()}</span>
                   </div>
                 )}

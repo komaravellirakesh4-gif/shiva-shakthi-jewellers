@@ -132,7 +132,21 @@ export const translations = {
     selectDate: "Select Date",
     allDates: "All Dates",
     dailyReport: "Daily Report",
-    interestCalculator: "Interest Calculator"
+    interestCalculator: "Interest Calculator",
+
+    // Bill Hardcoded Text
+    shopName: "SHIVA SHAKTHI JEWELLERS",
+    shopAddress: "OLD BAZAAR, ACHAMPET, DIST: NGKL, TELANGANA 509375",
+    billNo: "BILL NO",
+    ratesHeader: "RATES (10G)",
+    additionsSubtotal: "Additions Subtotal (+)",
+    deductionsSubtotal: "Deductions Subtotal (-)",
+    ornamentLabel: "Ornament",
+    oldItemLabel: "Old Item",
+    lossLabel: "Loss",
+    netLabel: "Net",
+    creditLabel: "CR",
+    walkIn: "WALK-IN"
   },
   hi: {
     // Navbar & Common
@@ -267,7 +281,21 @@ export const translations = {
     selectDate: "तारीख चुनें",
     allDates: "सभी तारीखें",
     dailyReport: "दैनिक रिपोर्ट",
-    interestCalculator: "ब्याज कैलकुलेटर"
+    interestCalculator: "ब्याज कैलकुलेटर",
+
+    // Bill Hardcoded Text
+    shopName: "शिवा शक्ति ज्वेलर्स",
+    shopAddress: "पुराना बाजार, अचमपेट, जिला: नगरकुर्नूल, तेलंगाना 509375",
+    billNo: "बिल संख्या",
+    ratesHeader: "दरें (10 ग्राम)",
+    additionsSubtotal: "जोड़ उप-योग (+)",
+    deductionsSubtotal: "कटौती उप-योग (-)",
+    ornamentLabel: "आभूषण",
+    oldItemLabel: "पुरानी वस्तु",
+    lossLabel: "हानि",
+    netLabel: "शुद्ध",
+    creditLabel: "जमा",
+    walkIn: "वॉक-इन"
   },
   te: {
     // Navbar & Common
@@ -402,6 +430,20 @@ export const translations = {
     selectDate: "తేదీని ఎంచుకోండి",
     allDates: "అన్ని తేదీలు",
     dailyReport: "రోజువారీ నివేదిక",
-    interestCalculator: "వడ్డీ కాలిక్యులేటర్"
+    interestCalculator: "వడ్డీ కాలిక్యులేటర్",
+
+    // Bill Hardcoded Text
+    shopName: "శివ శక్తి జ్యూవెలర్స్",
+    shopAddress: "ఓల్డ్ బజార్, అచ్చంపేట, జిల్లా: నాగర్‌కర్నూల్, తెలంగాణ 509375",
+    billNo: "బిల్ నంబర్",
+    ratesHeader: "ధరలు (10 గ్రా)",
+    additionsSubtotal: "జోడింపులు ఉప మొత్తం (+)",
+    deductionsSubtotal: "మినహాయింపులు ఉప మొత్తం (-)",
+    ornamentLabel: "ఆభరణం",
+    oldItemLabel: "పాత వస్తువు",
+    lossLabel: "నష్టం",
+    netLabel: "నికరం",
+    creditLabel: "జమ",
+    walkIn: "వాక్-ఇన్"
   }
 };

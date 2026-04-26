@@ -131,7 +131,8 @@ export const translations = {
     exportToSheets: "Export to Sheets",
     selectDate: "Select Date",
     allDates: "All Dates",
-    dailyReport: "Daily Report"
+    dailyReport: "Daily Report",
+    interestCalculator: "Interest Calculator"
   },
   hi: {
     // Navbar & Common
@@ -265,7 +266,8 @@ export const translations = {
     exportToSheets: "शीट्स में एक्सपोर्ट करें",
     selectDate: "तारीख चुनें",
     allDates: "सभी तारीखें",
-    dailyReport: "दैनिक रिपोर्ट"
+    dailyReport: "दैनिक रिपोर्ट",
+    interestCalculator: "ब्याज कैलकुलेटर"
   },
   te: {
     // Navbar & Common
@@ -399,6 +401,7 @@ export const translations = {
     exportToSheets: "షీట్లకు ఎగుమతి చేయండి",
     selectDate: "తేదీని ఎంచుకోండి",
     allDates: "అన్ని తేదీలు",
-    dailyReport: "రోజువారీ నివేదిక"
+    dailyReport: "రోజువారీ నివేదిక",
+    interestCalculator: "వడ్డీ కాలిక్యులేటర్"
   }
 };

@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { GoldCalculator } from '@/components/calculator/GoldCalculator'
 import { BillReceipt } from '@/components/calculator/BillReceipt'
 import { NotesManager } from '@/components/admin/NotesManager'
+import { InterestCalculator } from '@/components/admin/InterestCalculator'
 import { useGoldStore, CalculationResult } from '@/lib/store'
 import { translations } from '@/lib/translations'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -35,7 +36,8 @@ import {
   IndianRupee,
   ShoppingBag,
   Users,
-  BarChart3
+  BarChart3,
+  Percent
 } from 'lucide-react'
 import { format, isWithinInterval, startOfDay, endOfDay, subDays } from 'date-fns'
 import { useFirestore, useDoc, useMemoFirebase, useUser, useAuth, useCollection, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
@@ -103,7 +105,7 @@ export default function AdminPage() {
   const { user, isUserLoading: isAuthLoading } = useUser()
 
   const [mounted, setMounted] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'calculator' | 'rates' | 'history' | 'notes'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'calculator' | 'rates' | 'history' | 'notes' | 'interest'>('overview')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCalculation, setSelectedCalculation] = useState<CalculationResult | null>(null)
   const [currentTime, setCurrentTime] = useState<Date | null>(null)
@@ -328,6 +330,7 @@ export default function AdminPage() {
     { id: 'calculator' as const, icon: Calculator, label: t.newOrder },
     { id: 'history' as const, icon: History, label: t.ordersHistory },
     { id: 'notes' as const, icon: Notebook, label: t.notes },
+    { id: 'interest' as const, icon: Percent, label: t.interestCalculator },
   ]
 
   return (
@@ -427,7 +430,7 @@ export default function AdminPage() {
               <SidebarTrigger />
               <div className="h-5 w-px bg-border" />
               <h2 className="text-sm md:text-base font-bold text-foreground uppercase tracking-wide truncate max-w-[150px] md:max-w-none">
-                {activeTab === 'history' ? t.ordersHistory : activeTab === 'notes' ? t.notes : activeTab === 'overview' ? t.overview : activeTab === 'calculator' ? t.newOrder : t.priceManagement}
+                {activeTab === 'history' ? t.ordersHistory : activeTab === 'notes' ? t.notes : activeTab === 'overview' ? t.overview : activeTab === 'calculator' ? t.newOrder : activeTab === 'interest' ? t.interestCalculator : t.priceManagement}
               </h2>
             </div>
 
@@ -593,6 +596,7 @@ export default function AdminPage() {
             {activeTab === 'calculator' && <GoldCalculator />}
             {activeTab === 'rates' && <div className="max-w-4xl mx-auto"><PriceManager /></div>}
             {activeTab === 'notes' && <NotesManager isAdmin={isAdmin} />}
+            {activeTab === 'interest' && <InterestCalculator />}
 
             {/* ORDER HISTORY */}
             {activeTab === 'history' && (

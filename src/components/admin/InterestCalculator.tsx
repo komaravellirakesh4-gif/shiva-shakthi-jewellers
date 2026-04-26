@@ -45,21 +45,34 @@ export function InterestCalculator() {
     const today = new Date()
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
   })
+  // Separate display text states for the date input fields
+  const [fromDateText, setFromDateText] = useState('')
+  const [toDateText, setToDateText] = useState(() => {
+    const today = new Date()
+    const dd = String(today.getDate()).padStart(2, '0')
+    const mm = String(today.getMonth() + 1).padStart(2, '0')
+    const yyyy = today.getFullYear()
+    return `${dd}-${mm}-${yyyy}`
+  })
   const [result, setResult] = useState<InterestResult | null>(null)
   const [isCalculating, setIsCalculating] = useState(false)
   const fromDateRef = useRef<HTMLInputElement>(null)
   const toDateRef = useRef<HTMLInputElement>(null)
 
   // Convert YYYY-MM-DD to DD-MM-YYYY for display
-  const formatDateDisplay = (isoDate: string) => {
+  const isoToDisplay = (isoDate: string) => {
     if (!isoDate) return ''
     const parts = isoDate.split('-')
-    if (parts.length !== 3) return isoDate
+    if (parts.length !== 3 || parts[0].length !== 4) return ''
     return `${parts[2]}-${parts[1]}-${parts[0]}`
   }
 
   // Handle typed DD-MM-YYYY input and convert to YYYY-MM-DD internally
-  const handleDateTextChange = (value: string, setter: (val: string) => void) => {
+  const handleDateTextChange = (
+    value: string,
+    setIso: (val: string) => void,
+    setDisplay: (val: string) => void
+  ) => {
     // Allow only digits and dashes
     const cleaned = value.replace(/[^0-9-]/g, '')
     
@@ -75,6 +88,9 @@ export function InterestCalculator() {
         formatted = digitsOnly
       }
     }
+
+    // Always update display text so user sees what they type
+    setDisplay(formatted)
     
     // Try to parse complete DD-MM-YYYY to YYYY-MM-DD
     const match = formatted.match(/^(\d{2})-(\d{2})-(\d{4})$/)
@@ -82,15 +98,23 @@ export function InterestCalculator() {
       const [, dd, mm, yyyy] = match
       const day = parseInt(dd), month = parseInt(mm), year = parseInt(yyyy)
       if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1900) {
-        setter(`${yyyy}-${mm}-${dd}`)
+        setIso(`${yyyy}-${mm}-${dd}`)
         return
       }
     }
     
-    // If incomplete, store raw text temporarily (won't break validation)
-    if (formatted.length < 10) {
-      setter(formatted)
-    }
+    // If incomplete or invalid, clear the ISO date so validation won't pass prematurely
+    setIso('')
+  }
+
+  // When date picker sets an ISO date, sync the display text
+  const handlePickerChange = (
+    isoValue: string,
+    setIso: (val: string) => void,
+    setDisplay: (val: string) => void
+  ) => {
+    setIso(isoValue)
+    setDisplay(isoToDisplay(isoValue))
   }
 
   const isFormValid = useMemo(() => {
@@ -149,6 +173,8 @@ export function InterestCalculator() {
     setInterestRate('')
     setFromDate('')
     setToDate('')
+    setFromDateText('')
+    setToDateText('')
     setResult(null)
   }
 
@@ -269,8 +295,8 @@ export function InterestCalculator() {
                 <div className="relative">
                   <Input
                     type="text"
-                    value={fromDate ? formatDateDisplay(fromDate) : ''}
-                    onChange={(e) => handleDateTextChange(e.target.value, setFromDate)}
+                    value={fromDateText}
+                    onChange={(e) => handleDateTextChange(e.target.value, setFromDate, setFromDateText)}
                     placeholder="DD-MM-YYYY"
                     className="h-12 font-bold border-primary/15 focus:border-primary bg-muted/30 text-sm pr-10"
                   />
@@ -278,7 +304,7 @@ export function InterestCalculator() {
                     ref={fromDateRef}
                     type="date"
                     value={fromDate}
-                    onChange={(e) => setFromDate(e.target.value)}
+                    onChange={(e) => handlePickerChange(e.target.value, setFromDate, setFromDateText)}
                     className="sr-only"
                     tabIndex={-1}
                   />
@@ -299,8 +325,8 @@ export function InterestCalculator() {
                 <div className="relative">
                   <Input
                     type="text"
-                    value={toDate ? formatDateDisplay(toDate) : ''}
-                    onChange={(e) => handleDateTextChange(e.target.value, setToDate)}
+                    value={toDateText}
+                    onChange={(e) => handleDateTextChange(e.target.value, setToDate, setToDateText)}
                     placeholder="DD-MM-YYYY"
                     className="h-12 font-bold border-primary/15 focus:border-primary bg-muted/30 text-sm pr-10"
                   />
@@ -308,7 +334,7 @@ export function InterestCalculator() {
                     ref={toDateRef}
                     type="date"
                     value={toDate}
-                    onChange={(e) => setToDate(e.target.value)}
+                    onChange={(e) => handlePickerChange(e.target.value, setToDate, setToDateText)}
                     min={fromDate}
                     className="sr-only"
                     tabIndex={-1}

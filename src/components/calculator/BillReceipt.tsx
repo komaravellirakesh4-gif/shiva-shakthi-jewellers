@@ -9,10 +9,12 @@ import {
   Loader2,
   CheckCircle2,
   Download,
-  Share2
+  Share2,
+  Globe,
+  ChevronDown
 } from 'lucide-react'
 import { format } from 'date-fns'
-import { useGoldStore, CalculationResult } from '@/lib/store'
+import { useGoldStore, CalculationResult, Language } from '@/lib/store'
 import { translations } from '@/lib/translations'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
@@ -313,8 +315,16 @@ export const BillReceipt: React.FC<BillReceiptProps> = ({
   showConfirmButton = false 
 }) => {
   const { language } = useGoldStore()
-  const t = translations[language]
+  const [billLanguage, setBillLanguage] = useState<Language>(language)
+  const [showLangMenu, setShowLangMenu] = useState(false)
+  const t = translations[billLanguage]
   const { toast } = useToast()
+
+  const languageOptions: { code: Language; label: string; native: string }[] = [
+    { code: 'en', label: 'English', native: 'English' },
+    { code: 'te', label: 'Telugu', native: 'తెలుగు' },
+    { code: 'hi', label: 'Hindi', native: 'हिंदी' },
+  ]
   const visibleReceiptRef = useRef<HTMLDivElement>(null)
   const [isExporting, setIsExporting] = useState(false)
 
@@ -438,9 +448,47 @@ export const BillReceipt: React.FC<BillReceiptProps> = ({
     <>
       <div className="fixed inset-0 z-[100] bg-slate-950/95 animate-in fade-in duration-300 overflow-y-auto no-print flex flex-col items-center p-4 md:p-10">
         <div className="max-w-[190mm] w-full relative mb-12 flex flex-col items-center">
-          <Button variant="ghost" size="icon" className="absolute -top-12 right-0 text-white hover:bg-white/20 z-[110]" onClick={onClose}>
-            <X className="w-8 h-8" />
-          </Button>
+          {/* Top bar with language selector and close button */}
+          <div className="absolute -top-12 left-0 right-0 flex items-center justify-between z-[110]">
+            {/* Language Selector */}
+            <div className="relative">
+              <button
+                onClick={() => setShowLangMenu(!showLangMenu)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all duration-200"
+              >
+                <Globe className="w-4 h-4" />
+                <span className="text-sm font-bold">
+                  {languageOptions.find(l => l.code === billLanguage)?.native}
+                </span>
+                <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", showLangMenu && "rotate-180")} />
+              </button>
+              {showLangMenu && (
+                <div className="absolute top-full left-0 mt-2 w-44 bg-slate-900 border border-white/20 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-[120]">
+                  {languageOptions.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => {
+                        setBillLanguage(lang.code)
+                        setShowLangMenu(false)
+                      }}
+                      className={cn(
+                        "w-full flex items-center justify-between px-4 py-3 text-sm font-bold transition-colors",
+                        billLanguage === lang.code
+                          ? "bg-blue-800 text-white"
+                          : "text-white/80 hover:bg-white/10"
+                      )}
+                    >
+                      <span>{lang.native}</span>
+                      <span className="text-[10px] uppercase tracking-wider text-white/50">{lang.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/20" onClick={onClose}>
+              <X className="w-8 h-8" />
+            </Button>
+          </div>
           
           <div className="w-full overflow-x-auto flex justify-center pb-8">
             <ReceiptLayout ref={visibleReceiptRef} calculation={calculation} t={t} />

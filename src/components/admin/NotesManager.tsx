@@ -106,6 +106,7 @@ const RELATION_PREFIXES = [
   { value: "W/O", label: "W/O (Wife of)" },
   { value: "H/O", label: "H/O (Husband of)" },
   { value: "R/O", label: "R/O (Resident of)" },
+  { value: "C/O", label: "C/O (Care of)" },
 ]
 
 

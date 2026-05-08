@@ -636,6 +636,7 @@ export default function AdminPage() {
                             <TableRow className="bg-muted/30 border-b border-primary/10 hover:bg-muted/30">
                               <TableHead className="w-[60px] text-center text-[10px] font-bold uppercase tracking-wider">{t.sNo}</TableHead>
                               <TableHead className="min-w-[110px] text-[10px] font-bold uppercase tracking-wider">{t.invoiceNo}</TableHead>
+                              <TableHead className="min-w-[110px] text-[10px] font-bold uppercase tracking-wider">{t.date}</TableHead>
                               <TableHead className="min-w-[140px] text-[10px] font-bold uppercase tracking-wider">{t.customerName}</TableHead>
                               <TableHead className="min-w-[130px] text-[10px] font-bold uppercase tracking-wider">{t.customerPhone}</TableHead>
                               <TableHead className="min-w-[130px] text-[10px] font-bold uppercase tracking-wider">{t.itemName}</TableHead>
@@ -648,6 +649,7 @@ export default function AdminPage() {
                               <TableRow key={calc.id} className="hover:bg-primary/[0.03] transition-colors border-b border-border/50 group">
                                 <TableCell className="text-center text-xs font-medium text-muted-foreground">{index + 1}</TableCell>
                                 <TableCell className="font-bold text-xs text-primary/70">{highlightMatch(calc.billNumber, searchQuery)}</TableCell>
+                                <TableCell className="text-xs font-medium text-muted-foreground">{format(new Date(calc.timestamp), 'dd MMM yyyy')}</TableCell>
                                 <TableCell className="font-bold text-xs uppercase">{highlightMatch(calc.customerName || "WALK-IN", searchQuery)}</TableCell>
                                 <TableCell className="text-xs">{highlightMatch(calc.customerPhone || "N/A", searchQuery)}</TableCell>
                                 <TableCell className="text-xs uppercase">{highlightMatch(calc.itemName, searchQuery)}</TableCell>

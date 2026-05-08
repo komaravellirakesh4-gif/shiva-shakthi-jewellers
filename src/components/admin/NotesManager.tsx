@@ -38,11 +38,15 @@ import {
   FileSpreadsheet,
   PlusCircle,
   BookOpen,
-  Users
+  Users,
+  MapPin
 } from 'lucide-react'
 import { useFirestore, useUser, useCollection, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase'
 import { collection, doc } from 'firebase/firestore'
-import { format } from 'date-fns'
+import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns'
+import { DateRange } from 'react-day-picker'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useGoldStore } from '@/lib/store'
 import { translations } from '@/lib/translations'
 import { cn } from '@/lib/utils'
@@ -78,6 +82,7 @@ interface CustomerNote {
   customerName: string;
   relationPrefix: string;
   relationName: string;
+  address: string;
   mobileNo: string;
   amountDue: number;
   itemName: string;
@@ -111,6 +116,7 @@ export const NotesManager = ({ isAdmin }: { isAdmin: boolean }) => {
   const db = useFirestore()
   const { toast } = useToast()
   const [searchQuery, setSearchQuery] = useState('')
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: undefined, to: undefined })
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingNote, setEditingNote] = useState<CustomerNote | null>(null)
 
@@ -119,6 +125,7 @@ export const NotesManager = ({ isAdmin }: { isAdmin: boolean }) => {
   const [customerName, setCustomerName] = useState('')
   const [relationPrefix, setRelationPrefix] = useState('')
   const [relationName, setRelationName] = useState('')
+  const [address, setAddress] = useState('')
   const [mobileNo, setMobileNo] = useState('')
   const [amountDue, setAmountDue] = useState('')
   const [itemName, setItemName] = useState('')
@@ -150,17 +157,31 @@ export const NotesManager = ({ isAdmin }: { isAdmin: boolean }) => {
 
   const filteredNotes = useMemo(() => {
     if (!notes) return [];
-    return [...notes].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).filter(n => 
-      !searchQuery || n.customerName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      n.mobileNo.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      n.itemName.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [notes, searchQuery]);
+    let sorted = [...notes].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-  const handleOpenAddDialog = () => { setPageNo(''); setNoteDate(format(new Date(), 'yyyy-MM-dd')); setCustomerName(''); setRelationPrefix(''); setRelationName(''); setMobileNo(''); setAmountDue(''); setItemName(''); setEditingNote(null); setIsDialogOpen(true) }
+    if (dateRange?.from) {
+      const from = startOfDay(dateRange.from);
+      const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
+      sorted = sorted.filter(n => isWithinInterval(new Date(n.timestamp), { start: from, end: to }));
+    }
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      sorted = sorted.filter(n =>
+        n.customerName.toLowerCase().includes(query) ||
+        n.mobileNo.toLowerCase().includes(query) ||
+        n.itemName.toLowerCase().includes(query) ||
+        (n.address || '').toLowerCase().includes(query)
+      );
+    }
+
+    return sorted;
+  }, [notes, searchQuery, dateRange]);
+
+  const handleOpenAddDialog = () => { setPageNo(''); setNoteDate(format(new Date(), 'yyyy-MM-dd')); setCustomerName(''); setRelationPrefix(''); setRelationName(''); setAddress(''); setMobileNo(''); setAmountDue(''); setItemName(''); setEditingNote(null); setIsDialogOpen(true) }
 
   const handleEdit = (note: CustomerNote) => {
-    setEditingNote(note); setPageNo(note.pageNo || ''); setNoteDate(format(new Date(note.timestamp), 'yyyy-MM-dd')); setCustomerName(note.customerName); setRelationPrefix(note.relationPrefix || ''); setRelationName(note.relationName || ''); setMobileNo(note.mobileNo); setAmountDue(note.amountDue.toString()); setItemName(note.itemName); setIsDialogOpen(true)
+    setEditingNote(note); setPageNo(note.pageNo || ''); setNoteDate(format(new Date(note.timestamp), 'yyyy-MM-dd')); setCustomerName(note.customerName); setRelationPrefix(note.relationPrefix || ''); setRelationName(note.relationName || ''); setAddress(note.address || ''); setMobileNo(note.mobileNo); setAmountDue(note.amountDue.toString()); setItemName(note.itemName); setIsDialogOpen(true)
   }
 
   const handleSaveNote = () => {
@@ -169,7 +190,7 @@ export const NotesManager = ({ isAdmin }: { isAdmin: boolean }) => {
     const [year, month, day] = noteDate ? noteDate.split('-').map(Number) : [];
     const selectedDate = noteDate ? new Date(year, month - 1, day, 12, 0, 0) : new Date();
     const noteData: CustomerNote = {
-      id: noteId, pageNo, customerName: customerName.toUpperCase(), relationPrefix, relationName: relationName.toUpperCase(), mobileNo: mobileNo.toUpperCase(), amountDue: parseFloat(amountDue) || 0, itemName: itemName.toUpperCase(), timestamp: selectedDate.toISOString()
+      id: noteId, pageNo, customerName: customerName.toUpperCase(), relationPrefix, relationName: relationName.toUpperCase(), address: address.toUpperCase(), mobileNo: mobileNo.toUpperCase(), amountDue: parseFloat(amountDue) || 0, itemName: itemName.toUpperCase(), timestamp: selectedDate.toISOString()
     };
     setDocumentNonBlocking(noteRef, noteData, { merge: true });
     setIsDialogOpen(false);
@@ -177,12 +198,12 @@ export const NotesManager = ({ isAdmin }: { isAdmin: boolean }) => {
 
   const handleExportNotesCSV = () => {
     if (filteredNotes.length === 0) return;
-    const rows = [[`"PENDING NOTES"`, `""`, `""`, `""`, `""`, `""`, `""`]];
-    const headers = ["PAGE NO", "DATE", "CUSTOMER", "RELATION", "PHONE", "ITEM", "DUE"];
+    const rows = [[`"PENDING NOTES"`, `""`, `""`, `""`, `""`, `""`, `""`, `""`]];
+    const headers = ["PAGE NO", "DATE", "CUSTOMER", "RELATION", "ADDRESS", "PHONE", "ITEM", "DUE"];
     rows.push(headers.map(h => `"${h}"`));
     filteredNotes.forEach(n => {
       const relation = n.relationPrefix ? `${n.relationPrefix} ${n.relationName || ''}`.trim() : '';
-      rows.push([`"${n.pageNo || ''}"`, `"${format(new Date(n.timestamp), 'dd/MM/yy')}"`, `"${n.customerName}"`, `"${relation}"`, `"${n.mobileNo}"`, `"${n.itemName}"`, `"${n.amountDue}"`]);
+      rows.push([`"${n.pageNo || ''}"`, `"${format(new Date(n.timestamp), 'dd/MM/yy')}"`, `"${n.customerName}"`, `"${relation}"`, `"${n.address || ''}"`, `"${n.mobileNo}"`, `"${n.itemName}"`, `"${n.amountDue}"`]);
     });
     const csvContent = "\uFEFF" + rows.map(r => r.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -202,8 +223,17 @@ export const NotesManager = ({ isAdmin }: { isAdmin: boolean }) => {
             <CardTitle className="text-2xl font-black">{t.pendingNotes}</CardTitle>
             <CardDescription>{t.trackingDues}</CardDescription>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t.searchPlaceholder} className="w-64" />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("gap-2 font-bold text-xs uppercase border-primary/15", dateRange?.from && "bg-primary text-primary-foreground")}>
+                  <CalendarDays className="w-4 h-4" />
+                  {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, "LLL dd")} - ${format(dateRange.to, "LLL dd")}` : format(dateRange.from, "LLL dd")) : t.selectDate}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start"><Calendar mode="range" selected={dateRange} onSelect={setDateRange} initialFocus numberOfMonths={2} /></PopoverContent>
+            </Popover>
             <Button variant="outline" onClick={handleExportNotesCSV} disabled={filteredNotes.length === 0}><FileSpreadsheet className="w-4 h-4 mr-2" />{t.exportToSheets}</Button>
             <Button onClick={handleOpenAddDialog} className="font-bold"><Plus className="w-4 h-4 mr-2" /> {t.newNote}</Button>
           </div>
@@ -223,6 +253,7 @@ export const NotesManager = ({ isAdmin }: { isAdmin: boolean }) => {
                     <TableHead className={cn(colWidth, "border-r border-primary/10")}>{t.dateTime}</TableHead>
                     <TableHead className={cn(colWidth, "border-r border-primary/10")}>{t.customerName}</TableHead>
                     <TableHead className={cn(colWidth, "border-r border-primary/10")}>{t.relation}</TableHead>
+                    <TableHead className={cn(colWidth, "border-r border-primary/10")}>{t.customerAddress}</TableHead>
                     <TableHead className={cn(colWidth, "border-r border-primary/10")}>{t.customerPhone}</TableHead>
                     <TableHead className={cn(colWidth, "border-r border-primary/10")}>{t.itemName}</TableHead>
                     <TableHead className={cn(colWidth, "text-right border-r border-primary/10")}>{t.amountDue}</TableHead>
@@ -247,6 +278,7 @@ export const NotesManager = ({ isAdmin }: { isAdmin: boolean }) => {
                           <span><span className="text-xs font-bold text-primary">{note.relationPrefix}</span>{' '}{highlightMatch(note.relationName, searchQuery)}</span>
                         ) : '-'}
                       </TableCell>
+                      <TableCell className="font-medium uppercase border-r border-primary/10">{highlightMatch(note.address, searchQuery) || '-'}</TableCell>
                       <TableCell className="font-medium border-r border-primary/10">{highlightMatch(note.mobileNo, searchQuery)}</TableCell>
                       <TableCell className="uppercase border-r border-primary/10">{highlightMatch(note.itemName, searchQuery)}</TableCell>
                       <TableCell className="text-right font-black text-primary border-r border-primary/10">Rs {note.amountDue.toLocaleString()}</TableCell>
@@ -309,6 +341,10 @@ export const NotesManager = ({ isAdmin }: { isAdmin: boolean }) => {
                   <Input value={relationName} onChange={(e) => setRelationName(e.target.value.toUpperCase())} placeholder={t.enterRelationName} className="font-bold uppercase" />
                 </div>
               </div>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3" />{t.customerAddress}</Label>
+              <Input value={address} onChange={(e) => setAddress(e.target.value.toUpperCase())} placeholder={t.enterCustomerAddress} className="font-bold uppercase" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>

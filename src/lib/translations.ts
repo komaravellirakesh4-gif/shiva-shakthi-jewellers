@@ -111,6 +111,10 @@ export const translations = {
     addNewNote: "Add New Pending Note",
     editNote: "Edit Pending Note",
     itemName: "Item Name",
+    pageNo: "Page No",
+    relation: "Relation",
+    selectRelation: "Select Relation",
+    enterRelationName: "Enter Name",
 
     // Login
     adminDashboard: "Admin Dashboard",
@@ -260,6 +264,10 @@ export const translations = {
     addNewNote: "नया नोट जोड़ें",
     editNote: "नोट संपादित करें",
     itemName: "आइटम का नाम",
+    pageNo: "पृष्ठ संख्या",
+    relation: "संबंध",
+    selectRelation: "संबंध चुनें",
+    enterRelationName: "नाम दर्ज करें",
 
     // Login
     adminDashboard: "एडमिन डैशबोर्ड",
@@ -409,6 +417,10 @@ export const translations = {
     addNewNote: "కొత్త పెండింగ్ నోట్ జోడించండి",
     editNote: "పెండింగ్ నోట్‌ను సవరించండి",
     itemName: "వస్తువు పేరు",
+    pageNo: "పేజీ నంబర్",
+    relation: "సంబంధం",
+    selectRelation: "సంబంధం ఎంచుకోండి",
+    enterRelationName: "పేరు నమోదు చేయండి",
 
     // Login
     adminDashboard: "అడ్మిన్ డాష్‌బోర్డ్",

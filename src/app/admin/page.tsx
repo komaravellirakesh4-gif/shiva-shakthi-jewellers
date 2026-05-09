@@ -7,6 +7,7 @@ import { GoldCalculator } from '@/components/calculator/GoldCalculator'
 import { BillReceipt } from '@/components/calculator/BillReceipt'
 import { NotesManager } from '@/components/admin/NotesManager'
 import { InterestCalculator } from '@/components/admin/InterestCalculator'
+import { GoldLoanManager } from '@/components/admin/GoldLoanManager'
 import { useGoldStore, CalculationResult } from '@/lib/store'
 import { translations } from '@/lib/translations'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -37,7 +38,8 @@ import {
   ShoppingBag,
   Users,
   BarChart3,
-  Percent
+  Percent,
+  Banknote
 } from 'lucide-react'
 import { format, isWithinInterval, startOfDay, endOfDay, subDays } from 'date-fns'
 import { useFirestore, useDoc, useMemoFirebase, useUser, useAuth, useCollection, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase'
@@ -105,7 +107,7 @@ export default function AdminPage() {
   const { user, isUserLoading: isAuthLoading } = useUser()
 
   const [mounted, setMounted] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'calculator' | 'rates' | 'history' | 'notes' | 'interest'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'calculator' | 'rates' | 'history' | 'notes' | 'interest' | 'gold-loan'>('overview')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCalculation, setSelectedCalculation] = useState<CalculationResult | null>(null)
   const [currentTime, setCurrentTime] = useState<Date | null>(null)
@@ -149,6 +151,12 @@ export default function AdminPage() {
 
   const { data: calculations, isLoading: isCalcsLoading } = useCollection<CalculationResult>(calcsRef)
 
+  const goldLoansRef = useMemoFirebase(() => {
+    if (!user || !isAdmin) return null;
+    return collection(db, 'users', SHARED_ADMIN_ID, 'gold_loans');
+  }, [db, user, isAdmin])
+  const { data: goldLoans, isLoading: isGoldLoansLoading } = useCollection<any>(goldLoansRef)
+
   const notesRef = useMemoFirebase(() => {
     if (!user || !isAdmin) return null;
     return collection(db, 'users', SHARED_ADMIN_ID, 'notes');
@@ -191,12 +199,12 @@ export default function AdminPage() {
 
   const filteredHistory = useMemo(() => {
     if (!calculations) return [];
-    let sortedAll = [...calculations].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    let sortedAll = [...calculations].sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
 
     if (dateRange?.from) {
       const from = startOfDay(dateRange.from);
       const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
-      sortedAll = sortedAll.filter(c => isWithinInterval(new Date(c.timestamp), { start: from, end: to }));
+      sortedAll = sortedAll.filter(c => c.timestamp && !isNaN(new Date(c.timestamp).getTime()) && isWithinInterval(new Date(c.timestamp), { start: from, end: to }));
     }
 
     if (!searchQuery) return sortedAll;
@@ -208,6 +216,25 @@ export default function AdminPage() {
       c.itemName?.toLowerCase().includes(query)
     );
   }, [calculations, searchQuery, dateRange]);
+
+  const filteredGoldLoans = useMemo(() => {
+    if (!goldLoans) return [];
+    let sortedAll = [...goldLoans].sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
+
+    if (dateRange?.from) {
+      const from = startOfDay(dateRange.from);
+      const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
+      sortedAll = sortedAll.filter(l => l.timestamp && !isNaN(new Date(l.timestamp).getTime()) && isWithinInterval(new Date(l.timestamp), { start: from, end: to }));
+    }
+
+    if (!searchQuery) return sortedAll;
+    const query = searchQuery.toLowerCase();
+    return sortedAll.filter(l =>
+      l.customerName?.toLowerCase().includes(query) ||
+      l.customerPhone?.toLowerCase().includes(query) ||
+      l.receiptNumber?.toLowerCase().includes(query)
+    );
+  }, [goldLoans, searchQuery, dateRange]);
 
   const highlightMatch = (text: string | undefined | null, query: string) => {
     if (!text) return "";
@@ -232,6 +259,11 @@ export default function AdminPage() {
 
   const handleDelete = (calcId: string) => {
     const docRef = doc(db, 'users', SHARED_ADMIN_ID, 'calculations', calcId);
+    deleteDocumentNonBlocking(docRef);
+  }
+
+  const handleDeleteGoldLoan = (loanId: string) => {
+    const docRef = doc(db, 'users', SHARED_ADMIN_ID, 'gold_loans', loanId);
     deleteDocumentNonBlocking(docRef);
   }
 
@@ -280,7 +312,7 @@ export default function AdminPage() {
     const headers = ["BILL NUMBER", "DATE", "TIME", "CUSTOMER NAME", "PHONE", "ITEM NAME", "WEIGHT (G)", "RATE", "TOTAL", "PAID", "BALANCE"];
     rows.push(headers);
     filteredHistory.forEach(c => rows.push([
-      c.billNumber, format(new Date(c.timestamp), 'dd MMM yyyy'), format(new Date(c.timestamp), 'hh:mm a'),
+      c.billNumber, c.timestamp && !isNaN(new Date(c.timestamp).getTime()) ? format(new Date(c.timestamp), 'dd MMM yyyy') : 'N/A', c.timestamp && !isNaN(new Date(c.timestamp).getTime()) ? format(new Date(c.timestamp), 'hh:mm a') : 'N/A',
       c.customerName || 'WALK-IN', c.customerPhone || 'N/A', c.itemName || 'ORNAMENT',
       c.weight || 0, c.rate || 0, Math.round(c.finalTotal || 0), Math.round(c.amountPaid || 0), Math.round(c.balance || 0)
     ]));
@@ -329,6 +361,8 @@ export default function AdminPage() {
     { id: 'overview' as const, icon: LayoutDashboard, label: t.overview },
     { id: 'calculator' as const, icon: Calculator, label: t.newOrder },
     { id: 'history' as const, icon: History, label: t.ordersHistory },
+    { id: 'gold-loan' as const, icon: Banknote, label: "Gold Loan" },
+    { id: 'gold-loan-history' as const, icon: History, label: "Gold Loan History" },
     { id: 'notes' as const, icon: Notebook, label: t.notes },
     { id: 'interest' as const, icon: Percent, label: t.interestCalculator },
   ]
@@ -430,7 +464,7 @@ export default function AdminPage() {
               <SidebarTrigger />
               <div className="h-5 w-px bg-border" />
               <h2 className="text-sm md:text-base font-bold text-foreground uppercase tracking-wide truncate max-w-[150px] md:max-w-none">
-                {activeTab === 'history' ? t.ordersHistory : activeTab === 'notes' ? t.notes : activeTab === 'overview' ? t.overview : activeTab === 'calculator' ? t.newOrder : activeTab === 'interest' ? t.interestCalculator : t.priceManagement}
+                {activeTab === 'history' ? t.ordersHistory : activeTab === 'notes' ? t.notes : activeTab === 'overview' ? t.overview : activeTab === 'calculator' ? t.newOrder : activeTab === 'interest' ? t.interestCalculator : activeTab === 'gold-loan' ? (t.goldLoan || "Gold Loan") : activeTab === 'gold-loan-history' ? "Gold Loan History" : t.priceManagement}
               </h2>
             </div>
 
@@ -597,6 +631,72 @@ export default function AdminPage() {
             {activeTab === 'rates' && <div className="max-w-4xl mx-auto"><PriceManager /></div>}
             {activeTab === 'notes' && <NotesManager isAdmin={isAdmin} />}
             {activeTab === 'interest' && <InterestCalculator />}
+            {activeTab === 'gold-loan' && <GoldLoanManager />}
+
+            {/* GOLD LOAN HISTORY */}
+            {activeTab === 'gold-loan-history' && (
+              <div className="space-y-5 animate-fade-in">
+                <div className="flex flex-col md:flex-row gap-3 justify-between items-stretch">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+                     <div className="relative flex-1 max-w-md">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
+                      <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t.searchPlaceholder} className="pl-10 h-10 w-full border-primary/10 focus:border-primary" />
+                    </div>
+                  </div>
+                </div>
+
+                {isGoldLoansLoading ? (
+                  <div className="space-y-3">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}</div>
+                ) : (
+                  <Card className="border-rose-900/10 shadow-md overflow-hidden bg-card">
+                    <div className="h-0.5 bg-rose-700" />
+                    <CardContent className="p-0">
+                      <ScrollArea className="w-full">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-muted/30 border-b border-primary/10 hover:bg-muted/30">
+                              <TableHead className="w-[60px] text-center text-[10px] font-bold uppercase tracking-wider">{t.sNo}</TableHead>
+                              <TableHead className="min-w-[110px] text-[10px] font-bold uppercase tracking-wider">Receipt No</TableHead>
+                              <TableHead className="min-w-[110px] text-[10px] font-bold uppercase tracking-wider">{t.date}</TableHead>
+                              <TableHead className="min-w-[140px] text-[10px] font-bold uppercase tracking-wider">{t.customerName}</TableHead>
+                              <TableHead className="min-w-[130px] text-[10px] font-bold uppercase tracking-wider">{t.customerPhone}</TableHead>
+                              <TableHead className="min-w-[130px] text-[10px] font-bold uppercase tracking-wider">Item Type</TableHead>
+                              <TableHead className="min-w-[110px] text-right text-[10px] font-bold uppercase tracking-wider">Amount</TableHead>
+                              <TableHead className="text-center min-w-[130px] text-[10px] font-bold uppercase tracking-wider">{t.actions}</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredGoldLoans.map((loan, index) => (
+                              <TableRow key={loan.id} className="hover:bg-rose-900/[0.03] transition-colors border-b border-border/50 group">
+                                <TableCell className="text-center text-xs font-medium text-muted-foreground">{index + 1}</TableCell>
+                                <TableCell className="font-bold text-xs text-rose-700">{highlightMatch(loan.receiptNumber, searchQuery)}</TableCell>
+                                <TableCell className="text-xs font-medium text-muted-foreground">{loan.timestamp && !isNaN(new Date(loan.timestamp).getTime()) ? format(new Date(loan.timestamp), 'dd MMM yyyy') : 'N/A'}</TableCell>
+                                <TableCell className="font-bold text-xs uppercase">{highlightMatch(loan.customerName || "WALK-IN", searchQuery)}</TableCell>
+                                <TableCell className="text-xs">{highlightMatch(loan.customerPhone || "N/A", searchQuery)}</TableCell>
+                                <TableCell className="text-xs uppercase">{highlightMatch(loan.itemType, searchQuery)}</TableCell>
+                                <TableCell className="text-right font-bold text-xs text-rose-700">₹{Math.round(loan.amount || 0).toLocaleString('en-IN')}</TableCell>
+                                <TableCell>
+                                  <div className="flex justify-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button></AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader><AlertDialogTitle>{t.delete}?</AlertDialogTitle><AlertDialogDescription>Delete loan {loan.receiptNumber}?</AlertDialogDescription></AlertDialogHeader>
+                                        <AlertDialogFooter><AlertDialogCancel>{t.cancel}</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteGoldLoan(loan.id)} className="bg-destructive text-destructive-foreground">{t.delete}</AlertDialogAction></AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                        <ScrollBar orientation="horizontal" />
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
 
             {/* ORDER HISTORY */}
             {activeTab === 'history' && (
@@ -649,11 +749,11 @@ export default function AdminPage() {
                               <TableRow key={calc.id} className="hover:bg-primary/[0.03] transition-colors border-b border-border/50 group">
                                 <TableCell className="text-center text-xs font-medium text-muted-foreground">{index + 1}</TableCell>
                                 <TableCell className="font-bold text-xs text-primary/70">{highlightMatch(calc.billNumber, searchQuery)}</TableCell>
-                                <TableCell className="text-xs font-medium text-muted-foreground">{format(new Date(calc.timestamp), 'dd MMM yyyy')}</TableCell>
+                                <TableCell className="text-xs font-medium text-muted-foreground">{calc.timestamp && !isNaN(new Date(calc.timestamp).getTime()) ? format(new Date(calc.timestamp), 'dd MMM yyyy') : 'N/A'}</TableCell>
                                 <TableCell className="font-bold text-xs uppercase">{highlightMatch(calc.customerName || "WALK-IN", searchQuery)}</TableCell>
                                 <TableCell className="text-xs">{highlightMatch(calc.customerPhone || "N/A", searchQuery)}</TableCell>
                                 <TableCell className="text-xs uppercase">{highlightMatch(calc.itemName, searchQuery)}</TableCell>
-                                <TableCell className="text-right font-bold text-xs text-primary">₹{Math.round(calc.finalTotal).toLocaleString('en-IN')}</TableCell>
+                                <TableCell className="text-right font-bold text-xs text-primary">₹{Math.round(calc.finalTotal || 0).toLocaleString('en-IN')}</TableCell>
                                 <TableCell>
                                   <div className="flex justify-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
                                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedCalculation(calc)}><Eye className="w-3.5 h-3.5" /></Button>

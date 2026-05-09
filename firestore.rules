@@ -2,18 +2,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * SHIVA SHAKTHI JEWELLERS - UPDATED SECURITY RULES
-     */
-
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** 
-     * ADMIN CHECK:
-     * Authorizes master admin emails.
-     */
     function isAdmin() {
       return isSignedIn() && (
         request.auth.token.email == 'raghuvarama66@gmail.com' || 
@@ -57,6 +49,9 @@ service cloud.firestore {
       match /notes/{noteId} {
         allow get, list, create, update, delete: if isAdmin();
       }
+      match /gold_loans/{loanId} {
+        allow get, list, create, update, delete: if isAdmin();
+      }
     }
 
     match /users/{userId} {
@@ -72,6 +67,11 @@ service cloud.firestore {
       }
 
       match /notes/{noteId} {
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create, update, delete: if isOwner(userId) || isAdmin();
+      }
+
+      match /gold_loans/{loanId} {
         allow get, list: if isOwner(userId) || isAdmin();
         allow create, update, delete: if isOwner(userId) || isAdmin();
       }

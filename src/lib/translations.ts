@@ -137,6 +137,13 @@ export const translations = {
     allDates: "All Dates",
     dailyReport: "Daily Report",
     interestCalculator: "Interest Calculator",
+    goldLoan: "Gold Loan",
+    goldLoanReceipt: "Gold & Silver Loan Receipt",
+    generateReceipt: "Generate Receipt",
+    loanDetails: "Loan Details",
+    itemDetails: "Item Details",
+    termsAndConditions: "Terms & Conditions",
+    printGoldLoan: "Print Loan Receipt",
 
     // Bill Hardcoded Text
     shopName: "SHIVA SHAKTHI JEWELLERS",
@@ -290,6 +297,13 @@ export const translations = {
     allDates: "सभी तारीखें",
     dailyReport: "दैनिक रिपोर्ट",
     interestCalculator: "ब्याज कैलकुलेटर",
+    goldLoan: "गोल्ड लोन",
+    goldLoanReceipt: "स्वर्ण और रजत ऋण रसीद",
+    generateReceipt: "रसीद बनाएँ",
+    loanDetails: "ऋण विवरण",
+    itemDetails: "आइटम विवरण",
+    termsAndConditions: "नियम और शर्तें",
+    printGoldLoan: "ऋण रसीद प्रिंट करें",
 
     // Bill Hardcoded Text
     shopName: "शिवा शक्ति ज्वेलर्स",
@@ -443,6 +457,13 @@ export const translations = {
     allDates: "అన్ని తేదీలు",
     dailyReport: "రోజువారీ నివేదిక",
     interestCalculator: "వడ్డీ కాలిక్యులేటర్",
+    goldLoan: "గోల్డ్ లోన్",
+    goldLoanReceipt: "బంగారు & వెండి రుణ రసీదు",
+    generateReceipt: "రసీదును రూపొందించండి",
+    loanDetails: "రుణ వివరాలు",
+    itemDetails: "వస్తువు వివరాలు",
+    termsAndConditions: "నిబంధనలు & షరతులు",
+    printGoldLoan: "లోన్ రసీదుని ప్రింట్ చేయండి",
 
     // Bill Hardcoded Text
     shopName: "శివ శక్తి జ్యూవెలర్స్",

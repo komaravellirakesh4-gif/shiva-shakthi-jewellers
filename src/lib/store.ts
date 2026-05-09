@@ -39,7 +39,21 @@ export interface CalculationResult {
   oldItemName?: string;
   oldItemValue?: number;
   oldRate?: number;
-  meltingLoss?: number;
+}
+
+export interface GoldLoanRecord {
+  id: string;
+  customerName: string;
+  customerPhone: string;
+  customerAddress: string;
+  receiptNumber: string;
+  timestamp: string;
+  itemType: 'Gold' | 'Silver';
+  weight: number;
+  itemDetails: string;
+  relationType: string;
+  relationName: string;
+  amount: number;
 }
 
 interface GoldStore {
@@ -59,6 +73,8 @@ interface GoldStore {
   setLanguage: (lang: Language) => void;
   setCursorEffect: (show: boolean) => void;
   incrementBillNumber: () => void;
+  nextGoldLoanNumber: number;
+  incrementGoldLoanNumber: () => void;
 }
 
 export const useGoldStore = create<GoldStore>()(
@@ -70,6 +86,7 @@ export const useGoldStore = create<GoldStore>()(
       },
       language: 'en',
       nextBillNumber: 1,
+      nextGoldLoanNumber: 1,
       showCursorEffect: true,
       settings: {
         gstPercent: 3,
@@ -97,6 +114,7 @@ export const useGoldStore = create<GoldStore>()(
       setLanguage: (language) => set({ language }),
       setCursorEffect: (showCursorEffect) => set({ showCursorEffect }),
       incrementBillNumber: () => set((state) => ({ nextBillNumber: state.nextBillNumber + 1 })),
+      incrementGoldLoanNumber: () => set((state) => ({ nextGoldLoanNumber: state.nextGoldLoanNumber + 1 })),
     }),
     {
       name: 'shiva-shakthi-gold-store-v4',

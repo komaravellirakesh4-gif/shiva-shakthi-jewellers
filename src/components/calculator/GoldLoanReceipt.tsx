@@ -8,6 +8,7 @@ import { useGoldStore, GoldLoanRecord, Language } from '@/lib/store'
 import { translations } from '@/lib/translations'
 import { useToast } from '@/hooks/use-toast'
 import { Share2, CheckCircle2, Edit2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 // Extracted Terms & Conditions from User Image
 const TERMS_AND_CONDITIONS = [

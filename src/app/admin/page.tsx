@@ -167,18 +167,20 @@ export default function AdminPage() {
   const dashboardStats = useMemo(() => {
     if (!calculations) return { totalOrders: 0, totalRevenue: 0, todayOrders: 0, todayRevenue: 0, uniqueCustomers: 0, pendingNotes: 0, chartData: [] }
 
+    const validCalcs = calculations.filter(c => c.timestamp && !isNaN(new Date(c.timestamp).getTime()))
+
     const today = startOfDay(new Date())
     const todayEnd = endOfDay(new Date())
-    const todayCalcs = calculations.filter(c => isWithinInterval(new Date(c.timestamp), { start: today, end: todayEnd }))
+    const todayCalcs = validCalcs.filter(c => isWithinInterval(new Date(c.timestamp), { start: today, end: todayEnd }))
 
-    const uniqueCustomers = new Set(calculations.filter(c => c.customerName && c.customerName !== 'WALK-IN').map(c => c.customerPhone || c.customerName)).size
+    const uniqueCustomers = new Set(validCalcs.filter(c => c.customerName && c.customerName !== 'WALK-IN').map(c => c.customerPhone || c.customerName)).size
 
     // Generate chart data for last 7 days
     const chartData = Array.from({ length: 7 }).map((_, i) => {
       const day = subDays(new Date(), 6 - i)
       const dayStart = startOfDay(day)
       const dayEnd = endOfDay(day)
-      const dayCalcs = calculations.filter(c => isWithinInterval(new Date(c.timestamp), { start: dayStart, end: dayEnd }))
+      const dayCalcs = validCalcs.filter(c => isWithinInterval(new Date(c.timestamp), { start: dayStart, end: dayEnd }))
       return {
         date: format(day, 'dd MMM'),
         sales: dayCalcs.reduce((sum, c) => sum + Math.round(c.finalTotal || 0), 0),
@@ -324,7 +326,7 @@ export default function AdminPage() {
     link.click();
   };
 
-  if (isAuthLoading || isRoleLoading) {
+  if (!mounted || isAuthLoading || isRoleLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
         <div className="w-20 h-20 rounded-2xl flex items-center justify-center shadow-xl shadow-primary/20 animate-glow-pulse overflow-hidden">
@@ -608,7 +610,7 @@ export default function AdminPage() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        {(calculations || []).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 3).map(calc => (
+                        {(calculations || []).filter(c => c.timestamp && !isNaN(new Date(c.timestamp).getTime())).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 3).map(calc => (
                           <div key={calc.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0 text-xs">
                             <div>
                               <p className="font-bold text-foreground uppercase">{calc.customerName || 'WALK-IN'}</p>

@@ -328,6 +328,32 @@ export default function AdminPage() {
     link.click();
   };
 
+  const handleExportGoldLoansToCSV = () => {
+    if (filteredGoldLoans.length === 0) return;
+    const rows = [["SHIVA SHAKTHI GOLD LOAN REPORT"], []];
+    const headers = ["RECEIPT NO", "DATE", "TIME", "CUSTOMER NAME", "PHONE", "ADDRESS", "RELATION", "ITEM TYPE", "WEIGHT (G)", "ITEM DETAILS", "AMOUNT"];
+    rows.push(headers);
+    filteredGoldLoans.forEach(l => rows.push([
+      l.receiptNumber, 
+      l.timestamp && !isNaN(new Date(l.timestamp).getTime()) ? format(new Date(l.timestamp), 'dd MMM yyyy') : 'N/A', 
+      l.timestamp && !isNaN(new Date(l.timestamp).getTime()) ? format(new Date(l.timestamp), 'hh:mm a') : 'N/A',
+      l.customerName || 'WALK-IN', 
+      l.customerPhone || 'N/A', 
+      l.customerAddress || 'N/A',
+      l.relationName || 'N/A',
+      l.itemType || 'Gold',
+      l.weight || 0,
+      `"${(l.itemDetails || '').replace(/"/g, '""')}"`,
+      Math.round(l.amount || 0)
+    ]));
+    const csvContent = "\uFEFF" + rows.map(r => r.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `GoldLoans_Report_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    link.click();
+  };
+
   if (!mounted || isAuthLoading || isRoleLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
@@ -645,6 +671,20 @@ export default function AdminPage() {
                      <div className="relative flex-1 max-w-md">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
                       <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t.searchPlaceholder} className="pl-10 h-10 w-full border-primary/10 focus:border-primary" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className={cn("h-10 flex-1 sm:flex-none gap-2 font-bold text-xs uppercase border-primary/15", dateRange?.from && "bg-primary text-primary-foreground")}>
+                            <CalendarIcon className="w-4 h-4" />
+                            {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, "LLL dd")} - ${format(dateRange.to, "LLL dd")}` : format(dateRange.from, "LLL dd")) : t.selectDate}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start"><Calendar mode="range" selected={dateRange} onSelect={setDateRange} initialFocus numberOfMonths={2} /></PopoverContent>
+                      </Popover>
+                      <Button onClick={handleExportGoldLoansToCSV} disabled={filteredGoldLoans.length === 0} variant="outline" size="sm" className="h-10 flex-1 sm:flex-none gap-2 font-bold text-[10px] uppercase tracking-widest text-green-700 border-green-200 hover:bg-green-50">
+                        <FileSpreadsheet className="w-4 h-4" /> <span className="hidden sm:inline">{t.exportToSheets}</span>
+                      </Button>
                     </div>
                   </div>
                 </div>

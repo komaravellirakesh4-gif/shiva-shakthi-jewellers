@@ -82,14 +82,20 @@ const ReceiptHalf = ({ loan, t }: { loan: GoldLoanRecord, t: any }) => {
              {/* Customer Name */}
              <div className="col-span-2 flex items-end border-b border-rose-100 pb-2">
                <div className="font-black text-rose-900 uppercase text-[12px] w-32 shrink-0">{t.customerName}:</div>
-               <div className="font-bold text-[16px] uppercase w-full ml-4">{loan.customerName}</div>
+               <div className={cn(
+                 "font-bold uppercase w-full ml-4",
+                 loan.customerName.length > 30 ? "text-[12px] leading-tight" : "text-[16px]"
+               )}>{loan.customerName}</div>
              </div>
 
              {/* Customer Address */}
              {loan.customerAddress && loan.customerAddress !== 'N/A' && (
                <div className="col-span-2 flex items-end border-b border-rose-100 pb-2">
                  <div className="font-black text-rose-900 uppercase text-[12px] w-32 shrink-0">{t.customerAddress || "Address"}:</div>
-                 <div className="font-bold text-[14px] uppercase w-full ml-4">{loan.customerAddress}</div>
+                 <div className={cn(
+                   "font-bold uppercase w-full ml-4",
+                   loan.customerAddress.length > 50 ? "text-[11px] leading-tight" : "text-[14px]"
+                 )}>{loan.customerAddress}</div>
                </div>
              )}
 
@@ -125,7 +131,11 @@ const ReceiptHalf = ({ loan, t }: { loan: GoldLoanRecord, t: any }) => {
              {/* Item Details */}
              <div className="col-span-2 flex items-start pt-1">
                <div className="font-black text-rose-900 uppercase text-[12px] w-32 shrink-0 pt-1">{t.itemDetails}:</div>
-               <div className="font-bold text-[13px] uppercase w-full ml-4 min-h-[30px] whitespace-pre-wrap leading-relaxed border-b border-dashed border-rose-300 pb-2">
+               <div className={cn(
+                 "font-bold uppercase w-full ml-4 min-h-[30px] whitespace-pre-wrap border-b border-dashed border-rose-300 pb-2",
+                 loan.itemDetails.length > 150 ? "text-[9px] leading-tight" : 
+                 loan.itemDetails.length > 80 ? "text-[11px] leading-snug" : "text-[13px] leading-relaxed"
+               )}>
                  {loan.itemDetails}
                </div>
              </div>

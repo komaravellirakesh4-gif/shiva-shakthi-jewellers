@@ -32,7 +32,7 @@ const ReceiptHalf = ({ loan, t }: { loan: GoldLoanRecord, t: any }) => {
   const qrUrl = `${baseUrl}/loan-status?a=${loan.amount}&d=${loan.timestamp}&r=${loan.receiptNumber}&n=${encodeURIComponent(loan.customerName)}`;
 
   return (
-    <div className="h-[148.5mm] w-[210mm] relative bg-[#fff5f8] border-b-2 border-dashed border-slate-300 p-6 flex flex-col box-border">
+    <div className="h-[148.5mm] w-[210mm] relative bg-[#fff5f8] border-b-2 border-dashed border-slate-300 p-6 flex flex-col box-border overflow-hidden">
       {/* Background Watermark */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.08] z-0 transform -rotate-[30deg]">
         <span className="text-[180px] font-black text-rose-900 tracking-[0.1em] leading-none">KBS</span>
@@ -64,8 +64,8 @@ const ReceiptHalf = ({ loan, t }: { loan: GoldLoanRecord, t: any }) => {
         </div>
 
         {/* Form Fields - Grid Layout */}
-        <div className="flex-1 border-[2px] border-rose-900 bg-white p-5 rounded-xl relative shadow-sm">
-           <div className="grid grid-cols-2 gap-x-12 gap-y-4 pb-8">
+        <div className="flex-1 border-[2px] border-rose-900 bg-white p-5 rounded-xl relative shadow-sm overflow-hidden">
+           <div className="grid grid-cols-2 gap-x-12 gap-y-3 pb-8">
              
              {/* Date / Time & Receipt No */}
              <div className="col-span-2 flex justify-between border-b border-rose-100 pb-2">
@@ -83,7 +83,7 @@ const ReceiptHalf = ({ loan, t }: { loan: GoldLoanRecord, t: any }) => {
              <div className="col-span-2 flex items-end border-b border-rose-100 pb-2">
                <div className="font-black text-rose-900 uppercase text-[12px] w-32 shrink-0">{t.customerName}:</div>
                <div className={cn(
-                 "font-bold uppercase w-full ml-4",
+                 "font-bold uppercase w-full ml-4 line-clamp-1",
                  loan.customerName.length > 30 ? "text-[12px] leading-tight" : "text-[16px]"
                )}>{loan.customerName}</div>
              </div>
@@ -93,7 +93,7 @@ const ReceiptHalf = ({ loan, t }: { loan: GoldLoanRecord, t: any }) => {
                <div className="col-span-2 flex items-end border-b border-rose-100 pb-2">
                  <div className="font-black text-rose-900 uppercase text-[12px] w-32 shrink-0">{t.customerAddress || "Address"}:</div>
                  <div className={cn(
-                   "font-bold uppercase w-full ml-4",
+                   "font-bold uppercase w-full ml-4 line-clamp-2",
                    loan.customerAddress.length > 50 ? "text-[11px] leading-tight" : "text-[14px]"
                  )}>{loan.customerAddress}</div>
                </div>
@@ -102,7 +102,7 @@ const ReceiptHalf = ({ loan, t }: { loan: GoldLoanRecord, t: any }) => {
              {/* Relation */}
              <div className="col-span-2 flex items-end border-b border-rose-100 pb-2">
                <div className="font-black text-rose-900 uppercase text-[12px] w-32 shrink-0">{loan.relationType || "Relation"}:</div>
-               <div className="font-bold text-[16px] uppercase w-full ml-4">{loan.relationName}</div>
+               <div className="font-bold text-[16px] uppercase w-full ml-4 line-clamp-1">{loan.relationName}</div>
              </div>
 
              {/* Mobile No */}
@@ -133,8 +133,8 @@ const ReceiptHalf = ({ loan, t }: { loan: GoldLoanRecord, t: any }) => {
                <div className="font-black text-rose-900 uppercase text-[12px] w-32 shrink-0 pt-1">{t.itemDetails}:</div>
                <div className={cn(
                  "font-bold uppercase w-full ml-4 min-h-[30px] whitespace-pre-wrap border-b border-dashed border-rose-300 pb-2",
-                 loan.itemDetails.length > 150 ? "text-[9px] leading-tight" : 
-                 loan.itemDetails.length > 80 ? "text-[11px] leading-snug" : "text-[13px] leading-relaxed"
+                 loan.itemDetails.length > 150 ? "text-[9px] leading-tight line-clamp-4" : 
+                 loan.itemDetails.length > 80 ? "text-[11px] leading-snug line-clamp-3" : "text-[13px] leading-relaxed line-clamp-2"
                )}>
                  {loan.itemDetails}
                </div>

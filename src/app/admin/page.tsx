@@ -8,6 +8,7 @@ import { BillReceipt } from '@/components/calculator/BillReceipt'
 import { NotesManager } from '@/components/admin/NotesManager'
 import { InterestCalculator } from '@/components/admin/InterestCalculator'
 import { GoldLoanManager } from '@/components/admin/GoldLoanManager'
+import { GoldLoanReceipt } from '@/components/calculator/GoldLoanReceipt'
 import { useGoldStore, CalculationResult } from '@/lib/store'
 import { translations } from '@/lib/translations'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -107,9 +108,10 @@ export default function AdminPage() {
   const { user, isUserLoading: isAuthLoading } = useUser()
 
   const [mounted, setMounted] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'calculator' | 'rates' | 'history' | 'notes' | 'interest' | 'gold-loan'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'calculator' | 'rates' | 'history' | 'notes' | 'interest' | 'gold-loan' | 'gold-loan-history'>('overview')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCalculation, setSelectedCalculation] = useState<CalculationResult | null>(null)
+  const [selectedGoldLoan, setSelectedGoldLoan] = useState<any>(null)
   const [currentTime, setCurrentTime] = useState<Date | null>(null)
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: undefined, to: undefined })
@@ -679,6 +681,7 @@ export default function AdminPage() {
                                 <TableCell className="text-right font-bold text-xs text-rose-700">₹{Math.round(loan.amount || 0).toLocaleString('en-IN')}</TableCell>
                                 <TableCell>
                                   <div className="flex justify-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedGoldLoan(loan)}><Eye className="w-3.5 h-3.5" /></Button>
                                     <AlertDialog>
                                       <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button></AlertDialogTrigger>
                                       <AlertDialogContent>
@@ -811,6 +814,7 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
       {selectedCalculation && <BillReceipt calculation={selectedCalculation} onClose={() => setSelectedCalculation(null)} />}
+      {selectedGoldLoan && <GoldLoanReceipt loan={selectedGoldLoan} onClose={() => setSelectedGoldLoan(null)} />}
     </SidebarProvider>
   )
 }

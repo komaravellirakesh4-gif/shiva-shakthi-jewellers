@@ -65,7 +65,7 @@ const ReceiptHalf = ({ loan, t }: { loan: GoldLoanRecord, t: any }) => {
 
         {/* Form Fields - Grid Layout */}
         <div className="flex-1 border-[2px] border-rose-900 bg-white p-5 rounded-xl relative shadow-sm">
-           <div className="grid grid-cols-2 gap-x-12 gap-y-4">
+           <div className="grid grid-cols-2 gap-x-12 gap-y-4 pb-8">
              
              {/* Date / Time & Receipt No */}
              <div className="col-span-2 flex justify-between border-b border-rose-100 pb-2">
@@ -142,7 +142,7 @@ const ReceiptHalf = ({ loan, t }: { loan: GoldLoanRecord, t: any }) => {
            </div>
 
            {/* Signatures */}
-           <div className="absolute bottom-4 left-6 right-6 flex justify-between items-end">
+           <div className="absolute bottom-2 left-6 right-6 flex justify-between items-end">
               <div className="text-center">
                 <div className="w-40 border-t-2 border-rose-900 mb-1"></div>
                 <p className="text-[10px] font-black uppercase text-rose-900 tracking-[0.1em]">Signature of the Pawner</p>

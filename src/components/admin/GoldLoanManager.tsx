@@ -34,7 +34,8 @@ export const GoldLoanManager = () => {
     itemDetails: '',
     relationType: 'S/O',
     relationName: '',
-    amount: ''
+    amount: '',
+    date: new Date().toISOString().split('T')[0]
   })
   
   const [selectedLoan, setSelectedLoan] = useState<GoldLoanRecord | null>(null)
@@ -48,7 +49,7 @@ export const GoldLoanManager = () => {
       customerPhone: form.customerPhone || 'N/A',
       customerAddress: form.customerAddress || 'N/A',
       receiptNumber: generatedReceiptNo,
-      timestamp: new Date().toISOString(),
+      timestamp: new Date(`${form.date}T12:00:00`).toISOString(),
       itemType: form.itemType,
       weight: parseFloat(form.weight) || 0,
       itemDetails: form.itemDetails || `${form.itemType} Ornaments`,
@@ -86,7 +87,8 @@ export const GoldLoanManager = () => {
       itemDetails: '',
       relationType: 'S/O',
       relationName: '',
-      amount: ''
+      amount: '',
+      date: new Date().toISOString().split('T')[0]
     });
     setSelectedLoan(null);
   }
@@ -144,6 +146,16 @@ export const GoldLoanManager = () => {
                 onChange={(e) => setForm({ ...form, receiptNumber: e.target.value.toUpperCase() })}
                 placeholder={`KBS${nextGoldLoanNumber}`}
                 className="h-12 border-rose-100 focus-visible:ring-rose-500 font-bold uppercase text-primary"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase tracking-wider text-rose-900/70">Date</Label>
+              <Input 
+                type="date"
+                value={form.date}
+                onChange={(e) => setForm({ ...form, date: e.target.value })}
+                className="h-12 border-rose-100 focus-visible:ring-rose-500 font-bold uppercase"
               />
             </div>
             

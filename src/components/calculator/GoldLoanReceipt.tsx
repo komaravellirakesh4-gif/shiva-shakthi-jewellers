@@ -9,6 +9,7 @@ import { translations } from '@/lib/translations'
 import { useToast } from '@/hooks/use-toast'
 import { Share2, CheckCircle2, Edit2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { QRCodeSVG } from 'qrcode.react'
 
 // Extracted Terms & Conditions from User Image
 const TERMS_AND_CONDITIONS = [
@@ -27,6 +28,9 @@ const TERMS_AND_CONDITIONS = [
 ];
 
 const ReceiptHalf = ({ loan, t }: { loan: GoldLoanRecord, t: any }) => {
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://shivashakthijewellers.vercel.app';
+  const qrUrl = `${baseUrl}/loan-status?a=${loan.amount}&d=${loan.timestamp}&r=${loan.receiptNumber}&n=${encodeURIComponent(loan.customerName)}`;
+
   return (
     <div className="h-[148.5mm] w-[210mm] relative bg-[#fff5f8] border-b-2 border-dashed border-slate-300 p-6 flex flex-col box-border">
       {/* Background Watermark */}
@@ -36,11 +40,20 @@ const ReceiptHalf = ({ loan, t }: { loan: GoldLoanRecord, t: any }) => {
 
       <div className="relative z-10 flex flex-col h-full">
         {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-[28px] font-headline font-black text-rose-700 uppercase tracking-tight leading-none mb-2">{t.shopName}</h1>
-          <p className="text-[12px] font-bold text-slate-800 uppercase tracking-[0.1em] font-sans leading-none">
-            {t.shopAddress}
-          </p>
+        <div className="flex justify-between items-start mb-6">
+          <div className="w-16"></div> {/* Spacer for balance */}
+          <div className="text-center flex-1">
+            <h1 className="text-[28px] font-headline font-black text-rose-700 uppercase tracking-tight leading-none mb-2">{t.shopName}</h1>
+            <p className="text-[12px] font-bold text-slate-800 uppercase tracking-[0.1em] font-sans leading-none">
+              {t.shopAddress}
+            </p>
+          </div>
+          <div className="w-16 flex justify-end">
+            <div className="bg-white p-1 rounded-md border border-rose-200 shadow-sm">
+              <QRCodeSVG value={qrUrl} size={54} level="L" fgColor="#881337" />
+              <p className="text-[6px] text-center mt-0.5 font-bold text-rose-900 leading-none">SCAN TO CHECK</p>
+            </div>
+          </div>
         </div>
 
         {/* Banner Section */}

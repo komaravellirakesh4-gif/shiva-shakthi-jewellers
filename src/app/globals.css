@@ -361,3 +361,190 @@
 ::-webkit-scrollbar-thumb:hover {
   background: hsla(42, 78%, 50%, 0.7);
 }
+
+/* PREMIUM LUXURY EFFECTS */
+
+/* BODY BACKGROUND */
+.luxury-bg {
+  background: linear-gradient(180deg, #fffaf4 0%, #f8f1e7 45%, #f4e8d7 100%);
+  overflow-x: hidden;
+}
+
+/* GLASS NAVBAR */
+.navbar {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+  background: rgba(15, 15, 15, 0.72);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+/* PREMIUM BUTTON */
+.premium-btn {
+  padding: 14px 28px;
+  border: none;
+  border-radius: 40px;
+  background: linear-gradient(135deg, #d4af37, #f5d06f);
+  color: #111;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.4s ease;
+}
+
+.premium-btn:hover {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 12px 25px rgba(212, 175, 55, 0.35);
+}
+
+/* RATE CARDS */
+.rate-card {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 24px;
+  padding: 30px;
+  transition: 0.4s ease;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+}
+
+.rate-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 40px rgba(212, 175, 55, 0.18);
+}
+
+/* LIVE DOT */
+.live-dot {
+  width: 10px;
+  height: 10px;
+  background: #00c853;
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 200, 83, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 14px rgba(0, 200, 83, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 200, 83, 0);
+  }
+}
+
+/* SECTION TITLE */
+.section-title {
+  font-size: 64px;
+  font-weight: 700;
+  background: linear-gradient(90deg, #b8860b, #e0b84f, #8c6a0a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 20px;
+}
+
+/* TRUST SECTION */
+.trust-box {
+  display: flex;
+  gap: 25px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 50px;
+}
+
+.trust-item {
+  background: white;
+  padding: 25px 35px;
+  border-radius: 20px;
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+  transition: 0.4s;
+}
+
+.trust-item:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 15px 35px rgba(212, 175, 55, 0.15);
+}
+
+/* PREMIUM HERO */
+.hero-section {
+  position: relative;
+  padding: 140px 8%;
+  background: linear-gradient(135deg, rgba(255, 248, 235, 0.96), rgba(248, 239, 226, 0.96));
+  overflow: hidden;
+}
+
+/* GOLD PARTICLES */
+.hero-section::before {
+  content: '';
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(rgba(212, 175, 55, 0.12), transparent 70%);
+  top: -200px;
+  right: -150px;
+  border-radius: 50%;
+}
+
+/* FLOATING ANIMATION */
+.float-card {
+  animation: float-box 4s ease-in-out infinite;
+}
+
+@keyframes float-box {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+/* PREMIUM FOOTER */
+.footer {
+  background: #111;
+  padding: 70px 8%;
+  color: white;
+  border-top: 1px solid rgba(212, 175, 55, 0.15);
+}
+
+.footer h2 {
+  color: #d4af37;
+  margin-bottom: 20px;
+}
+
+.footer a {
+  color: #ddd;
+  text-decoration: none;
+  display: block;
+  margin: 8px 0;
+  transition: 0.3s;
+}
+
+.footer a:hover {
+  color: #d4af37;
+}
+
+/* WHATSAPP BUTTON */
+.whatsapp {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  width: 65px;
+  height: 65px;
+  background: #25d366;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 30px;
+  color: white;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  animation: float-box 3s ease-in-out infinite;
+}

@@ -330,37 +330,64 @@ export default function AdminPage() {
 
   const handleExportGoldLoansToCSV = () => {
     if (filteredGoldLoans.length === 0) return;
-    const rows = [["SHIVA SHAKTHI GOLD LOAN REPORT"], []];
+    
     const headers = [
       "RECEIPT NO", "DATE", "TIME", "CUSTOMER NAME", "PHONE", "ADDRESS", "RELATION", 
       "ITEM TYPE", "WEIGHT (G)", "ITEM DETAILS", "LOAN AMOUNT (Rs)",
       "STATUS", "PAID AMOUNT (Rs)", "PAID DATE", "INTEREST PAID (Rs)", 
       "REMAINING BALANCE (Rs)", "GOLD RETURNED", "GOLD RETURNED DATE", "CLOSED DATE", "ADMIN NOTES"
     ];
-    rows.push(headers);
-    filteredGoldLoans.forEach(l => rows.push([
-      l.receiptNumber, 
-      l.timestamp && !isNaN(new Date(l.timestamp).getTime()) ? format(new Date(l.timestamp), 'dd MMM yyyy') : 'N/A', 
-      l.timestamp && !isNaN(new Date(l.timestamp).getTime()) ? format(new Date(l.timestamp), 'hh:mm a') : 'N/A',
-      l.customerName || 'WALK-IN', 
-      l.customerPhone || 'N/A', 
-      l.customerAddress || 'N/A',
-      `${l.relationType || 'S/O'} ${l.relationName || 'N/A'}`,
-      l.itemType || 'Gold',
-      l.weight || 0,
-      `"${(l.itemDetails || '').replace(/"/g, '""')}"`,
-      Math.round(l.amount || 0),
-      l.status || 'Active',
-      l.paidAmount !== undefined ? Math.round(l.paidAmount) : 0,
-      l.paidDate || 'N/A',
-      l.interestPaid !== undefined ? Math.round(l.interestPaid) : 0,
-      l.remainingBalance !== undefined ? Math.round(l.remainingBalance) : 0,
-      l.goldReturned || 'No',
-      l.goldReturnedDate || 'N/A',
-      l.closedDate || 'N/A',
-      `"${(l.adminNotes || '').replace(/"/g, '""')}"`
-    ]));
-    const csvContent = "\uFEFF" + rows.map(r => r.join(",")).join("\n");
+
+    const formatDateCSV = (dStr: any) => {
+      if (!dStr) return 'N/A';
+      try {
+        const parsed = /^\d+$/.test(dStr) ? new Date(Number(dStr)) : new Date(dStr);
+        if (!isNaN(parsed.getTime())) {
+          return format(parsed, 'dd-MM-yyyy');
+        }
+      } catch(e) {}
+      return String(dStr);
+    };
+
+    const formatCSVRow = (row: any[]) => {
+      return row.map(val => {
+        const str = val === undefined || val === null ? '' : String(val);
+        return `"${str.replace(/"/g, '""').replace(/\n/g, ' ')}"`;
+      }).join(",");
+    };
+
+    const rows = [
+      formatCSVRow(["SHIVA SHAKTHI GOLD LOAN REPORT"]),
+      formatCSVRow([]),
+      formatCSVRow(headers)
+    ];
+
+    filteredGoldLoans.forEach(l => {
+      rows.push(formatCSVRow([
+        l.receiptNumber || 'N/A', 
+        l.timestamp && !isNaN(new Date(l.timestamp).getTime()) ? format(new Date(l.timestamp), 'dd-MM-yyyy') : 'N/A', 
+        l.timestamp && !isNaN(new Date(l.timestamp).getTime()) ? format(new Date(l.timestamp), 'hh:mm a') : 'N/A',
+        l.customerName || 'WALK-IN', 
+        l.customerPhone ? `'${l.customerPhone}` : 'N/A', 
+        l.customerAddress || 'N/A',
+        `${l.relationType || 'S/O'} ${l.relationName || 'N/A'}`,
+        l.itemType || 'Gold',
+        l.weight || 0,
+        l.itemDetails || 'N/A',
+        Math.round(l.amount || 0),
+        l.status || 'Active',
+        l.paidAmount !== undefined ? Math.round(l.paidAmount) : 0,
+        formatDateCSV(l.paidDate),
+        l.interestPaid !== undefined ? Math.round(l.interestPaid) : 0,
+        l.remainingBalance !== undefined ? Math.round(l.remainingBalance) : 0,
+        l.goldReturned || 'No',
+        formatDateCSV(l.goldReturnedDate),
+        formatDateCSV(l.closedDate) !== 'N/A' ? formatDateCSV(l.closedDate) : (l.status === 'Closed' ? 'Closed' : 'N/A'),
+        l.adminNotes || 'N/A'
+      ]));
+    });
+
+    const csvContent = "\uFEFF" + rows.join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);

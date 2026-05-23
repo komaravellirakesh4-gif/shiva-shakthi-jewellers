@@ -87,9 +87,6 @@ export default function Home() {
               
               {/* Left Side: Legacy of Trust & Purity Text Block */}
               <div className="space-y-6 flex-1 animate-slide-up text-left max-w-xl">
-                <div className="inline-flex items-center gap-2 text-amber-700 text-xs font-black uppercase tracking-[0.25em]">
-                  ✦ Trusted Since 2005
-                </div>
                 <h1 className="text-5xl md:text-6xl lg:text-7xl font-headline font-black text-gray-950 leading-[0.95]">
                   A Legacy of <br />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-600 via-amber-700 to-yellow-800">
@@ -153,12 +150,6 @@ export default function Home() {
                         </div>
                       )}
 
-                      {/* Dynamic Trend Badges matching mockup precisely */}
-                      <div className="mt-3 flex items-start">
-                        <span className="bg-emerald-50 text-emerald-700 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-100/50 flex items-center">
-                          {purity === '24K' ? "+120 (0.78%)" : "+10 (0.50%)"}
-                        </span>
-                      </div>
 
                       <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider border-t border-gray-100 mt-5 pt-4 flex justify-between">
                         <span>{t.perGram} / Sale Price</span>

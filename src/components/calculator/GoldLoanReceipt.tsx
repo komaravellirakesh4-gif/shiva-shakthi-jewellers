@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { X, Printer, Loader2, Download, Globe, ChevronDown } from 'lucide-react'
+import { X, Printer, Loader2, Download, Globe, ChevronDown, Banknote } from 'lucide-react'
 import { format } from 'date-fns'
 import { useGoldStore, GoldLoanRecord, Language } from '@/lib/store'
 import { translations } from '@/lib/translations'
@@ -10,6 +10,9 @@ import { useToast } from '@/hooks/use-toast'
 import { Share2, CheckCircle2, Edit2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { QRCodeSVG } from 'qrcode.react'
+import { useFirestore, updateDocumentNonBlocking } from '@/firebase'
+import { doc } from 'firebase/firestore'
+import { SHARED_ADMIN_ID } from '@/lib/constants'
 
 // Extracted Terms & Conditions from User Image
 const TERMS_AND_CONDITIONS = [
@@ -37,6 +40,14 @@ const ReceiptHalf = ({ loan, t }: { loan: GoldLoanRecord, t: any }) => {
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.08] z-0 transform -rotate-[30deg]">
         <span className="text-[180px] font-black text-rose-900 tracking-[0.1em] leading-none">KBS</span>
       </div>
+
+      {loan.status === 'Closed' && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[15] transform -rotate-[25deg]">
+          <div className="border-[8px] border-double border-red-600/35 px-12 py-4 rounded-3xl text-red-600/35 text-[64px] font-black uppercase tracking-[0.2em] shadow-lg">
+            CLOSED
+          </div>
+        </div>
+      )}
 
       <div className="relative z-10 flex flex-col h-full">
         {/* Header */}
@@ -84,8 +95,8 @@ const ReceiptHalf = ({ loan, t }: { loan: GoldLoanRecord, t: any }) => {
                <div className="font-black text-rose-900 uppercase text-[12px] w-32 shrink-0">{t.customerName}:</div>
                <div className={cn(
                  "font-bold uppercase w-full ml-4 line-clamp-1",
-                 loan.customerName.length > 30 ? "text-[12px] leading-tight" : "text-[16px]"
-               )}>{loan.customerName}</div>
+                 (loan.customerName || '').length > 30 ? "text-[12px] leading-tight" : "text-[16px]"
+               )}>{loan.customerName || 'WALK-IN'}</div>
              </div>
 
              {/* Customer Address */}
@@ -94,7 +105,7 @@ const ReceiptHalf = ({ loan, t }: { loan: GoldLoanRecord, t: any }) => {
                  <div className="font-black text-rose-900 uppercase text-[12px] w-32 shrink-0">{t.customerAddress || "Address"}:</div>
                  <div className={cn(
                    "font-bold uppercase w-full ml-4 line-clamp-2",
-                   loan.customerAddress.length > 50 ? "text-[11px] leading-tight" : "text-[14px]"
+                   (loan.customerAddress || '').length > 50 ? "text-[11px] leading-tight" : "text-[14px]"
                  )}>{loan.customerAddress}</div>
                </div>
              )}
@@ -131,12 +142,12 @@ const ReceiptHalf = ({ loan, t }: { loan: GoldLoanRecord, t: any }) => {
              {/* Item Details */}
              <div className="col-span-2 flex items-start pt-1">
                <div className="font-black text-rose-900 uppercase text-[12px] w-32 shrink-0 pt-1">{t.itemDetails}:</div>
-               <div className={cn(
+                <div className={cn(
                  "font-bold uppercase w-full ml-4 min-h-[30px] whitespace-pre-wrap border-b border-dashed border-rose-300 pb-2",
-                 loan.itemDetails.length > 150 ? "text-[9px] leading-tight line-clamp-4" : 
-                 loan.itemDetails.length > 80 ? "text-[11px] leading-snug line-clamp-3" : "text-[13px] leading-relaxed line-clamp-2"
+                 (loan.itemDetails || '').length > 150 ? "text-[9px] leading-tight line-clamp-4" : 
+                 (loan.itemDetails || '').length > 80 ? "text-[11px] leading-snug line-clamp-3" : "text-[13px] leading-relaxed line-clamp-2"
                )}>
-                 {loan.itemDetails}
+                 {loan.itemDetails || '-'}
                </div>
              </div>
            </div>
@@ -235,6 +246,103 @@ export const GoldLoanReceipt: React.FC<GoldLoanReceiptProps> = ({
   const t = translations[billLanguage]
   const { toast } = useToast()
 
+  const db = useFirestore()
+  const parseLoanDate = (ts: string) => {
+    try {
+      const parsed = /^\d+$/.test(ts) ? new Date(Number(ts)) : new Date(ts)
+      if (!isNaN(parsed.getTime())) {
+        return format(parsed, 'yyyy-MM-dd')
+      }
+    } catch(e) {}
+    return format(new Date(), 'yyyy-MM-dd')
+  }
+
+  const [activeRightTab, setActiveRightTab] = useState<'closing' | 'edit'>('closing')
+  
+  const [closingForm, setClosingForm] = useState({
+    paidAmount: loan.paidAmount !== undefined ? loan.paidAmount.toString() : '',
+    paidDate: loan.paidDate || format(new Date(), 'yyyy-MM-dd'),
+    interestPaid: loan.interestPaid !== undefined ? loan.interestPaid.toString() : '',
+    remainingBalance: loan.remainingBalance !== undefined ? loan.remainingBalance.toString() : '',
+    goldReturned: loan.goldReturned || 'No',
+    goldReturnedDate: loan.goldReturnedDate || format(new Date(), 'yyyy-MM-dd'),
+    status: loan.status || 'Active',
+    closedDate: loan.closedDate || format(new Date(), 'yyyy-MM-dd'),
+    adminNotes: loan.adminNotes || ''
+  })
+
+  const [editForm, setEditForm] = useState({
+    customerName: loan.customerName || '',
+    customerPhone: loan.customerPhone || '',
+    customerAddress: loan.customerAddress || '',
+    relationType: loan.relationType || 'S/O',
+    relationName: loan.relationName || '',
+    receiptNumber: loan.receiptNumber || '',
+    timestamp: parseLoanDate(loan.timestamp),
+    itemType: loan.itemType || 'Gold',
+    weight: loan.weight !== undefined ? loan.weight.toString() : '',
+    amount: loan.amount !== undefined ? loan.amount.toString() : '',
+    itemDetails: loan.itemDetails || ''
+  })
+
+  const [currentLoan, setCurrentLoan] = useState<GoldLoanRecord>(loan)
+
+  const handleSaveUpdate = () => {
+    const updatedData = {
+      paidAmount: parseFloat(closingForm.paidAmount) || 0,
+      paidDate: closingForm.paidDate,
+      interestPaid: parseFloat(closingForm.interestPaid) || 0,
+      remainingBalance: parseFloat(closingForm.remainingBalance) || 0,
+      goldReturned: closingForm.goldReturned as 'Yes' | 'No',
+      goldReturnedDate: closingForm.goldReturnedDate,
+      status: closingForm.status as 'Active' | 'Closed',
+      closedDate: closingForm.closedDate,
+      adminNotes: closingForm.adminNotes
+    }
+
+    const docRef = doc(db, 'users', SHARED_ADMIN_ID, 'gold_loans', loan.id)
+    updateDocumentNonBlocking(docRef, updatedData)
+
+    setCurrentLoan(prev => ({
+      ...prev,
+      ...updatedData
+    }))
+
+    toast({
+      title: "Success",
+      description: "Loan closing status updated successfully."
+    })
+  }
+
+  const handleSaveOriginalUpdate = () => {
+    const updatedData = {
+      customerName: editForm.customerName,
+      customerPhone: editForm.customerPhone,
+      customerAddress: editForm.customerAddress,
+      relationType: editForm.relationType,
+      relationName: editForm.relationName,
+      receiptNumber: editForm.receiptNumber,
+      timestamp: new Date(editForm.timestamp).getTime().toString(),
+      itemType: editForm.itemType as 'Gold' | 'Silver',
+      weight: parseFloat(editForm.weight) || 0,
+      amount: parseFloat(editForm.amount) || 0,
+      itemDetails: editForm.itemDetails
+    }
+
+    const docRef = doc(db, 'users', SHARED_ADMIN_ID, 'gold_loans', loan.id)
+    updateDocumentNonBlocking(docRef, updatedData)
+
+    setCurrentLoan(prev => ({
+      ...prev,
+      ...updatedData
+    }))
+
+    toast({
+      title: "Success",
+      description: "Original receipt details updated successfully."
+    })
+  }
+
   const languageOptions: { code: Language; label: string; native: string }[] = [
     { code: 'en', label: 'English', native: 'English' },
     { code: 'te', label: 'Telugu', native: 'తెలుగు' },
@@ -260,7 +368,7 @@ export const GoldLoanReceipt: React.FC<GoldLoanReceiptProps> = ({
       
       const opt = {
         margin: 0,
-        filename: `GoldLoan_${loan.receiptNumber}.pdf`,
+        filename: `GoldLoan_${currentLoan.receiptNumber}.pdf`,
         image: { type: 'jpeg', quality: 1 },
         html2canvas: { 
           scale: 2,
@@ -286,8 +394,8 @@ export const GoldLoanReceipt: React.FC<GoldLoanReceiptProps> = ({
     const blob = await generatePdfBlob();
     if (!blob) return;
     
-    const safeName = (loan.customerName || 'Customer').replace(/[^a-z0-9]/gi, '_');
-    const fileName = `GoldLoan_${loan.receiptNumber}_${safeName}.pdf`;
+    const safeName = (currentLoan.customerName || 'Customer').replace(/[^a-z0-9]/gi, '_');
+    const fileName = `GoldLoan_${currentLoan.receiptNumber}_${safeName}.pdf`;
     
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -305,19 +413,19 @@ export const GoldLoanReceipt: React.FC<GoldLoanReceiptProps> = ({
     const blob = await generatePdfBlob();
     if (!blob) return;
     
-    const safeName = (loan.customerName || 'Customer').replace(/[^a-z0-9]/gi, '_');
-    const fileName = `GoldLoan_${loan.receiptNumber}_${safeName}.pdf`;
+    const safeName = (currentLoan.customerName || 'Customer').replace(/[^a-z0-9]/gi, '_');
+    const fileName = `GoldLoan_${currentLoan.receiptNumber}_${safeName}.pdf`;
     const file = new File([blob], fileName, { type: "application/pdf" });
     
-    const customerPhoneRaw = loan.customerPhone || '';
+    const customerPhoneRaw = currentLoan.customerPhone || '';
     const cleanPhone = customerPhoneRaw.replace(/\D/g, '');
     
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({
           files: [file],
-          title: `KBS Gold Loan - ${loan.receiptNumber}`,
-          text: `Here is your Gold Loan Receipt for ${loan.customerName || 'Customer'}.`,
+          title: `KBS Gold Loan - ${currentLoan.receiptNumber}`,
+          text: `Here is your Gold Loan Receipt for ${currentLoan.customerName || 'Customer'}.`,
         });
         return;
       } catch (error) {
@@ -325,7 +433,7 @@ export const GoldLoanReceipt: React.FC<GoldLoanReceiptProps> = ({
       }
     }
 
-    const text = `*KBS GOLD LOAN*\n*Receipt No:* ${loan.receiptNumber}\n*Customer:* ${loan.customerName || 'Customer'}\n*Amount:* Rs ${Math.round(loan.amount || 0).toLocaleString()}\n\nPlease find your digital receipt attached.`;
+    const text = `*KBS GOLD LOAN*\n*Receipt No:* ${currentLoan.receiptNumber}\n*Customer:* ${currentLoan.customerName || 'Customer'}\n*Amount:* Rs ${Math.round(currentLoan.amount || 0).toLocaleString()}\n\nPlease find your digital receipt attached.`;
     const whatsappUrl = `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, '_blank');
     
@@ -338,7 +446,10 @@ export const GoldLoanReceipt: React.FC<GoldLoanReceiptProps> = ({
   return (
     <>
       <div className="fixed inset-0 z-[100] bg-slate-950/95 animate-in fade-in duration-300 overflow-y-auto no-print flex flex-col items-center p-4 md:p-10">
-        <div className="w-[210mm] relative mb-12 flex flex-col items-center">
+        <div className={cn(
+          "relative mb-12 flex flex-col items-center justify-center",
+          showConfirmButton ? "w-[210mm]" : "w-full max-w-[1250px] lg:flex-row lg:items-start lg:justify-center gap-8"
+        )}>
           {/* Top bar */}
           <div className="absolute -top-12 left-0 right-0 flex items-center justify-between z-[110]">
             <div className="relative">
@@ -366,57 +477,361 @@ export const GoldLoanReceipt: React.FC<GoldLoanReceiptProps> = ({
             </Button>
           </div>
           
-          <div className="w-full overflow-x-auto flex flex-col items-center pb-8 pt-4">
-             <div className="text-white/50 text-sm font-bold mb-4 uppercase tracking-widest flex items-center gap-2"><Printer className="w-4 h-4"/> Printable A4 Document Preview</div>
-             <ReceiptLayout ref={visibleReceiptRef} loan={loan} t={t} />
+          {/* Left Column: Printable Receipt Layout */}
+          <div className="flex flex-col items-center overflow-x-auto w-full lg:w-auto">
+             <div className="text-white/50 text-sm font-bold mb-4 uppercase tracking-widest flex items-center gap-2">
+               <Printer className="w-4 h-4"/> Printable A4 Document Preview
+             </div>
+             <ReceiptLayout ref={visibleReceiptRef} loan={currentLoan} t={t} />
+             
+             {/* Bottom Actions grid */}
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 no-print w-full max-w-[210mm]">
+               {showConfirmButton && onConfirm ? (
+                 <>
+                   <Button className="h-16 text-xl font-black gap-2 shadow-2xl bg-rose-700 text-white hover:bg-rose-800" onClick={onConfirm}>
+                     <CheckCircle2 className="w-6 h-6" /> Confirm & Save
+                   </Button>
+                   <Button variant="outline" className="h-16 text-xl font-black gap-2 border-4 border-rose-700 text-rose-700 hover:bg-rose-50 shadow-xl bg-white" onClick={onClose}>
+                     <Edit2 className="w-5 h-5" /> Edit
+                   </Button>
+                   
+                   <Button variant="outline" className="h-16 text-xl font-black gap-3 border-4 border-rose-700 text-rose-700 hover:bg-rose-50 shadow-xl bg-white" onClick={handleDownload} disabled={isExporting}>
+                     {isExporting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Download className="w-6 h-6" />}
+                     Download PDF
+                   </Button>
+
+                   <Button variant="outline" className="h-16 text-xl font-black gap-3 border-4 border-rose-700 text-rose-700 hover:bg-rose-50 shadow-xl bg-white" onClick={handleShareBill} disabled={isExporting}>
+                      {isExporting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Share2 className="w-6 h-6" />}
+                      Share Receipt
+                   </Button>
+                 </>
+               ) : (
+                 <>
+                   <Button className="h-16 text-xl font-black gap-3 shadow-2xl bg-rose-700 text-white hover:bg-rose-800" onClick={handlePrint}>
+                     <Printer className="w-6 h-6" /> {t.printGoldLoan || "Print Loan Receipt"}
+                   </Button>
+                   
+                   <Button variant="outline" className="h-16 text-xl font-black gap-3 border-4 border-rose-700 text-rose-700 hover:bg-rose-50 shadow-xl bg-white" onClick={handleDownload} disabled={isExporting}>
+                     {isExporting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Download className="w-6 h-6" />}
+                     Download PDF
+                   </Button>
+
+                   <Button variant="outline" className="h-16 text-xl font-black gap-3 border-4 border-rose-700 text-rose-700 hover:bg-rose-50 shadow-xl bg-white" onClick={handleShareBill} disabled={isExporting}>
+                     {isExporting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Share2 className="w-6 h-6" />}
+                     Share Receipt
+                   </Button>
+
+                   <Button variant="outline" className="h-16 px-8 font-black text-lg border-4 bg-white hover:bg-slate-50 text-slate-800" onClick={onClose}>
+                     Close
+                   </Button>
+                 </>
+               )}
+             </div>
           </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 no-print w-full max-w-[210mm]">
-            {showConfirmButton && onConfirm ? (
-              <>
-                <Button className="h-16 text-xl font-black gap-2 shadow-2xl bg-rose-700 text-white hover:bg-rose-800" onClick={onConfirm}>
-                  <CheckCircle2 className="w-6 h-6" /> Confirm & Save
-                </Button>
-                <Button variant="outline" className="h-16 text-xl font-black gap-2 border-4 border-rose-700 text-rose-700 hover:bg-rose-50 shadow-xl bg-white" onClick={onClose}>
-                  <Edit2 className="w-5 h-5" /> Edit
-                </Button>
-                
-                <Button variant="outline" className="h-16 text-xl font-black gap-3 border-4 border-rose-700 text-rose-700 hover:bg-rose-50 shadow-xl bg-white" onClick={handleDownload} disabled={isExporting}>
-                  {isExporting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Download className="w-6 h-6" />}
-                  Download PDF
-                </Button>
 
-                <Button variant="outline" className="h-16 text-xl font-black gap-3 border-4 border-rose-700 text-rose-700 hover:bg-rose-50 shadow-xl bg-white" onClick={handleShareBill} disabled={isExporting}>
-                   {isExporting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Share2 className="w-6 h-6" />}
-                   Share Receipt
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button className="h-16 text-xl font-black gap-3 shadow-2xl bg-rose-700 text-white hover:bg-rose-800" onClick={handlePrint}>
-                  <Printer className="w-6 h-6" /> {t.printGoldLoan || "Print Loan Receipt"}
-                </Button>
-                
-                <Button variant="outline" className="h-16 text-xl font-black gap-3 border-4 border-rose-700 text-rose-700 hover:bg-rose-50 shadow-xl bg-white" onClick={handleDownload} disabled={isExporting}>
-                  {isExporting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Download className="w-6 h-6" />}
-                  Download PDF
-                </Button>
+          {/* Right Column: Loan Closing Update Form / Edit Original Form */}
+          {!showConfirmButton && (
+            <div className="w-full max-w-[400px] shrink-0 bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-3xl shadow-2xl relative overflow-hidden mt-8 lg:mt-9">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/5 rounded-full blur-2xl pointer-events-none" />
+              
+              {/* Tab Switcher */}
+              <div className="flex gap-2 mb-6 bg-black/20 p-1 rounded-xl">
+                <button
+                  onClick={() => setActiveRightTab('closing')}
+                  className={cn(
+                    "flex-1 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition-all duration-200",
+                    activeRightTab === 'closing' ? "bg-yellow-500 text-black shadow" : "text-gray-400 hover:text-white"
+                  )}
+                >
+                  Closing status
+                </button>
+                <button
+                  onClick={() => setActiveRightTab('edit')}
+                  className={cn(
+                    "flex-1 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition-all duration-200",
+                    activeRightTab === 'edit' ? "bg-yellow-500 text-black shadow" : "text-gray-400 hover:text-white"
+                  )}
+                >
+                  Edit original
+                </button>
+              </div>
 
-                <Button variant="outline" className="h-16 text-xl font-black gap-3 border-4 border-rose-700 text-rose-700 hover:bg-rose-50 shadow-xl bg-white" onClick={handleShareBill} disabled={isExporting}>
-                  {isExporting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Share2 className="w-6 h-6" />}
-                  Share Receipt
-                </Button>
+              {activeRightTab === 'closing' ? (
+                <>
+                  <h2 className="text-xl font-headline font-black text-yellow-400 mb-6 uppercase tracking-wider flex items-center gap-2">
+                    <Banknote className="w-5 h-5 text-yellow-400" /> Loan Closing Update
+                  </h2>
+                  
+                  {/* Paid Amount & Paid Date */}
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Paid Amount (₹)</label>
+                      <input
+                        type="number"
+                        placeholder="Amount"
+                        value={closingForm.paidAmount}
+                        onChange={(e) => setClosingForm({ ...closingForm, paidAmount: e.target.value })}
+                        className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white font-bold placeholder:text-gray-600 focus:border-yellow-500/60 focus:ring-1 focus:ring-yellow-500/30 outline-none transition-all duration-300"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Paid Date</label>
+                      <input
+                        type="date"
+                        value={closingForm.paidDate}
+                        onChange={(e) => setClosingForm({ ...closingForm, paidDate: e.target.value })}
+                        className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white font-bold focus:border-yellow-500/60 outline-none transition-all duration-300 text-center uppercase tracking-wider"
+                      />
+                    </div>
+                  </div>
 
-                <Button variant="outline" className="h-16 px-8 font-black text-lg border-4 bg-white hover:bg-slate-50" onClick={onClose}>
-                  Close
-                </Button>
-              </>
-            )}
-          </div>
+                  {/* Interest Paid */}
+                  <div className="space-y-2 mb-4">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Interest Paid (₹)</label>
+                    <input
+                      type="number"
+                      placeholder="Interest Paid"
+                      value={closingForm.interestPaid}
+                      onChange={(e) => setClosingForm({ ...closingForm, interestPaid: e.target.value })}
+                      className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white font-bold placeholder:text-gray-600 focus:border-yellow-500/60 focus:ring-1 focus:ring-yellow-500/30 outline-none transition-all duration-300"
+                    />
+                  </div>
+
+                  {/* Remaining Balance */}
+                  <div className="space-y-2 mb-4">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Remaining Balance (₹)</label>
+                    <input
+                      type="number"
+                      placeholder="Remaining Balance"
+                      value={closingForm.remainingBalance}
+                      onChange={(e) => setClosingForm({ ...closingForm, remainingBalance: e.target.value })}
+                      className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white font-bold placeholder:text-gray-600 focus:border-yellow-500/60 focus:ring-1 focus:ring-yellow-500/30 outline-none transition-all duration-300"
+                    />
+                  </div>
+
+                  {/* Gold Returned & Gold Returned Date */}
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Gold Returned?</label>
+                      <select
+                        value={closingForm.goldReturned}
+                        onChange={(e) => setClosingForm({ ...closingForm, goldReturned: e.target.value })}
+                        className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white font-bold focus:border-yellow-500/60 outline-none transition-all duration-300"
+                      >
+                        <option className="bg-stone-900" value="Yes">Yes</option>
+                        <option className="bg-stone-900" value="No">No</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Returned Date</label>
+                      <input
+                        type="date"
+                        value={closingForm.goldReturnedDate}
+                        onChange={(e) => setClosingForm({ ...closingForm, goldReturnedDate: e.target.value })}
+                        className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white font-bold focus:border-yellow-500/60 outline-none transition-all duration-300 text-center uppercase tracking-wider"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Loan Status & Closed Date */}
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Loan Status</label>
+                      <select
+                        value={closingForm.status}
+                        onChange={(e) => setClosingForm({ ...closingForm, status: e.target.value })}
+                        className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white font-bold focus:border-yellow-500/60 outline-none transition-all duration-300"
+                      >
+                        <option className="bg-stone-900" value="Active">Active</option>
+                        <option className="bg-stone-900" value="Closed">Closed</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Closed Date</label>
+                      <input
+                        type="date"
+                        value={closingForm.closedDate}
+                        onChange={(e) => setClosingForm({ ...closingForm, closedDate: e.target.value })}
+                        className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white font-bold focus:border-yellow-500/60 outline-none transition-all duration-300 text-center uppercase tracking-wider"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  <div className="space-y-2 mb-6">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Admin Notes</label>
+                    <textarea
+                      placeholder="Admin Notes"
+                      value={closingForm.adminNotes}
+                      onChange={(e) => setClosingForm({ ...closingForm, adminNotes: e.target.value })}
+                      className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white font-bold placeholder:text-gray-600 focus:border-yellow-500/60 focus:ring-1 focus:ring-yellow-500/30 outline-none resize-y min-h-[80px] transition-all duration-300"
+                    />
+                  </div>
+
+                  {/* Save Button */}
+                  <button
+                    onClick={handleSaveUpdate}
+                    className="w-full bg-yellow-500 hover:bg-yellow-400 active:scale-[0.98] text-black py-4 rounded-xl font-black text-sm uppercase tracking-wider shadow-lg shadow-yellow-500/10 transition-all duration-200"
+                  >
+                    Save Update
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-xl font-headline font-black text-yellow-400 mb-6 uppercase tracking-wider flex items-center gap-2">
+                    <Edit2 className="w-5 h-5 text-yellow-400" /> Edit Original Receipt
+                  </h2>
+
+                  {/* Customer Name */}
+                  <div className="space-y-2 mb-4">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Customer Name</label>
+                    <input
+                      type="text"
+                      placeholder="Customer Name"
+                      value={editForm.customerName}
+                      onChange={(e) => setEditForm({ ...editForm, customerName: e.target.value })}
+                      className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white font-bold placeholder:text-gray-600 focus:border-yellow-500/60 focus:ring-1 focus:ring-yellow-500/30 outline-none transition-all duration-300"
+                    />
+                  </div>
+
+                  {/* Customer Phone & Relation Type */}
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Customer Phone</label>
+                      <input
+                        type="text"
+                        placeholder="Phone"
+                        value={editForm.customerPhone}
+                        onChange={(e) => setEditForm({ ...editForm, customerPhone: e.target.value })}
+                        className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white font-bold placeholder:text-gray-600 focus:border-yellow-500/60 focus:ring-1 focus:ring-yellow-500/30 outline-none transition-all duration-300"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Relationship</label>
+                      <select
+                        value={editForm.relationType}
+                        onChange={(e) => setEditForm({ ...editForm, relationType: e.target.value })}
+                        className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white font-bold focus:border-yellow-500/60 outline-none transition-all duration-300"
+                      >
+                        <option className="bg-stone-900" value="S/O">S/O</option>
+                        <option className="bg-stone-900" value="W/O">W/O</option>
+                        <option className="bg-stone-900" value="D/O">D/O</option>
+                        <option className="bg-stone-900" value="R/O">R/O</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Relation Name & Customer Address */}
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Relation Name</label>
+                      <input
+                        type="text"
+                        placeholder="Name"
+                        value={editForm.relationName}
+                        onChange={(e) => setEditForm({ ...editForm, relationName: e.target.value })}
+                        className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white font-bold placeholder:text-gray-600 focus:border-yellow-500/60 focus:ring-1 focus:ring-yellow-500/30 outline-none transition-all duration-300"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Customer Address</label>
+                      <input
+                        type="text"
+                        placeholder="Address"
+                        value={editForm.customerAddress}
+                        onChange={(e) => setEditForm({ ...editForm, customerAddress: e.target.value })}
+                        className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white font-bold placeholder:text-gray-600 focus:border-yellow-500/60 focus:ring-1 focus:ring-yellow-500/30 outline-none transition-all duration-300"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Receipt Number & Date */}
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Receipt No</label>
+                      <input
+                        type="text"
+                        placeholder="Receipt No"
+                        value={editForm.receiptNumber}
+                        onChange={(e) => setEditForm({ ...editForm, receiptNumber: e.target.value })}
+                        className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white font-bold placeholder:text-gray-600 focus:border-yellow-500/60 focus:ring-1 focus:ring-yellow-500/30 outline-none transition-all duration-300"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Receipt Date</label>
+                      <input
+                        type="date"
+                        value={editForm.timestamp}
+                        onChange={(e) => setEditForm({ ...editForm, timestamp: e.target.value })}
+                        className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white font-bold focus:border-yellow-500/60 outline-none transition-all duration-300 text-center uppercase tracking-wider"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Item Type & Weight */}
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Item Type</label>
+                      <select
+                        value={editForm.itemType}
+                        onChange={(e) => setEditForm({ ...editForm, itemType: e.target.value })}
+                        className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white font-bold focus:border-yellow-500/60 outline-none transition-all duration-300"
+                      >
+                        <option className="bg-stone-900" value="Gold">Gold</option>
+                        <option className="bg-stone-900" value="Silver">Silver</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Weight (gms)</label>
+                      <input
+                        type="number"
+                        step="0.001"
+                        placeholder="Weight"
+                        value={editForm.weight}
+                        onChange={(e) => setEditForm({ ...editForm, weight: e.target.value })}
+                        className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white font-bold placeholder:text-gray-600 focus:border-yellow-500/60 focus:ring-1 focus:ring-yellow-500/30 outline-none transition-all duration-300"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Loan Amount */}
+                  <div className="space-y-2 mb-4">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Loan Amount (₹)</label>
+                    <input
+                      type="number"
+                      placeholder="Loan Amount"
+                      value={editForm.amount}
+                      onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
+                      className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white font-bold placeholder:text-gray-600 focus:border-yellow-500/60 focus:ring-1 focus:ring-yellow-500/30 outline-none transition-all duration-300"
+                    />
+                  </div>
+
+                  {/* Item Details */}
+                  <div className="space-y-2 mb-6">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Item Details</label>
+                    <textarea
+                      placeholder="Item details..."
+                      value={editForm.itemDetails}
+                      onChange={(e) => setEditForm({ ...editForm, itemDetails: e.target.value })}
+                      className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white font-bold placeholder:text-gray-600 focus:border-yellow-500/60 focus:ring-1 focus:ring-yellow-500/30 outline-none resize-y min-h-[80px] transition-all duration-300"
+                    />
+                  </div>
+
+                  {/* Save Button */}
+                  <button
+                    onClick={handleSaveOriginalUpdate}
+                    className="w-full bg-yellow-500 hover:bg-yellow-400 active:scale-[0.98] text-black py-4 rounded-xl font-black text-sm uppercase tracking-wider shadow-lg shadow-yellow-500/10 transition-all duration-200"
+                  >
+                    Save Original Details
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
       <div className="print-only">
-        <ReceiptLayout loan={loan} t={t} />
+        <ReceiptLayout loan={currentLoan} t={t} />
       </div>
     </>
   )

@@ -54,6 +54,15 @@ export interface GoldLoanRecord {
   relationType: string;
   relationName: string;
   amount: number;
+  paidAmount?: number;
+  interestPaid?: number;
+  remainingBalance?: number;
+  goldReturned?: 'Yes' | 'No';
+  status?: 'Active' | 'Closed';
+  adminNotes?: string;
+  paidDate?: string;
+  goldReturnedDate?: string;
+  closedDate?: string;
 }
 
 interface GoldStore {

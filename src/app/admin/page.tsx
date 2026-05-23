@@ -151,13 +151,13 @@ export default function AdminPage() {
     return collection(db, 'users', SHARED_ADMIN_ID, 'calculations');
   }, [db, user, isAdmin])
 
-  const { data: calculations, isLoading: isCalcsLoading } = useCollection<CalculationResult>(calcsRef)
+  const { data: calculations, isLoading: isCalcsLoading, error: calcsError } = useCollection<CalculationResult>(calcsRef)
 
   const goldLoansRef = useMemoFirebase(() => {
     if (!user || !isAdmin) return null;
     return collection(db, 'users', SHARED_ADMIN_ID, 'gold_loans');
   }, [db, user, isAdmin])
-  const { data: goldLoans, isLoading: isGoldLoansLoading } = useCollection<any>(goldLoansRef)
+  const { data: goldLoans, isLoading: isGoldLoansLoading, error: goldLoansError } = useCollection<any>(goldLoansRef)
 
   const notesRef = useMemoFirebase(() => {
     if (!user || !isAdmin) return null;
@@ -214,10 +214,10 @@ export default function AdminPage() {
     if (!searchQuery) return sortedAll;
     const query = searchQuery.toLowerCase();
     return sortedAll.filter(c =>
-      c.customerName?.toLowerCase().includes(query) ||
-      c.customerPhone?.toLowerCase().includes(query) ||
-      c.billNumber?.toLowerCase().includes(query) ||
-      c.itemName?.toLowerCase().includes(query)
+      (c.customerName || '').toLowerCase().includes(query) ||
+      (c.customerPhone || '').toLowerCase().includes(query) ||
+      (c.billNumber || '').toLowerCase().includes(query) ||
+      (c.itemName || '').toLowerCase().includes(query)
     );
   }, [calculations, searchQuery, dateRange]);
 
@@ -234,9 +234,9 @@ export default function AdminPage() {
     if (!searchQuery) return sortedAll;
     const query = searchQuery.toLowerCase();
     return sortedAll.filter(l =>
-      l.customerName?.toLowerCase().includes(query) ||
-      l.customerPhone?.toLowerCase().includes(query) ||
-      l.receiptNumber?.toLowerCase().includes(query)
+      (l.customerName || '').toLowerCase().includes(query) ||
+      (l.customerPhone || '').toLowerCase().includes(query) ||
+      (l.receiptNumber || '').toLowerCase().includes(query)
     );
   }, [goldLoans, searchQuery, dateRange]);
 
@@ -689,6 +689,12 @@ export default function AdminPage() {
                   </div>
                 </div>
 
+                {goldLoansError && (
+                  <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm font-bold animate-pulse">
+                    ⚠️ Error loading Gold Loans: {goldLoansError.message}
+                  </div>
+                )}
+
                 {isGoldLoansLoading ? (
                   <div className="space-y-3">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}</div>
                 ) : (
@@ -706,6 +712,7 @@ export default function AdminPage() {
                               <TableHead className="min-w-[130px] text-[10px] font-bold uppercase tracking-wider">{t.customerPhone}</TableHead>
                               <TableHead className="min-w-[130px] text-[10px] font-bold uppercase tracking-wider">Item Type</TableHead>
                               <TableHead className="min-w-[110px] text-right text-[10px] font-bold uppercase tracking-wider">Amount</TableHead>
+                              <TableHead className="text-center min-w-[100px] text-[10px] font-bold uppercase tracking-wider">Status</TableHead>
                               <TableHead className="text-center min-w-[130px] text-[10px] font-bold uppercase tracking-wider">{t.actions}</TableHead>
                             </TableRow>
                           </TableHeader>
@@ -719,6 +726,14 @@ export default function AdminPage() {
                                 <TableCell className="text-xs">{highlightMatch(loan.customerPhone || "N/A", searchQuery)}</TableCell>
                                 <TableCell className="text-xs uppercase">{highlightMatch(loan.itemType, searchQuery)}</TableCell>
                                 <TableCell className="text-right font-bold text-xs text-rose-700">₹{Math.round(loan.amount || 0).toLocaleString('en-IN')}</TableCell>
+                                <TableCell className="text-center">
+                                  <span className={cn(
+                                    "px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
+                                    loan.status === 'Closed' ? "bg-red-100 text-red-700 border border-red-200" : "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                                  )}>
+                                    {loan.status || 'Active'}
+                                  </span>
+                                </TableCell>
                                 <TableCell>
                                   <div className="flex justify-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
                                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedGoldLoan(loan)}><Eye className="w-3.5 h-3.5" /></Button>

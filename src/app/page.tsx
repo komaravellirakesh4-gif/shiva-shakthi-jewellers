@@ -328,14 +328,20 @@ export default function Home() {
                   <MapPin className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
                   <span>OLD BAZAAR, Achampet,<br />Telangana 509375</span>
                 </p>
-                <p className="flex items-center gap-3 font-bold text-yellow-400 text-base">
+                <a 
+                  href="tel:+919985881156" 
+                  className="flex items-center gap-3 font-bold text-yellow-400 text-base hover:text-white transition-colors duration-300"
+                >
                   <Phone className="w-4 h-4" />
                   +91 9985881156
-                </p>
-                <p className="flex items-center gap-3 font-bold text-yellow-400/70">
-                  <Phone className="w-4 h-4" />
+                </a>
+                <a 
+                  href="tel:+919985888106" 
+                  className="flex items-center gap-3 font-bold text-yellow-400/70 hover:text-white transition-colors duration-300 mt-2 block"
+                >
+                  <Phone className="w-4 h-4 inline-block mr-1" />
                   +91 9985888106
-                </p>
+                </a>
               </div>
             </div>
           </div>

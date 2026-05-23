@@ -108,7 +108,7 @@ export const Navbar = () => {
           <div className="flex items-center gap-4">
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-10 w-10 text-gray-300 hover:bg-white/10 hover:text-white md:hidden">
+                <Button variant="ghost" size="icon" className="h-10 w-10 text-gray-300 hover:bg-white/10 hover:text-white">
                   <Menu className="w-6 h-6" />
                 </Button>
               </SheetTrigger>
